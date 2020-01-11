@@ -21,6 +21,8 @@ end
 const runtime_dispatch = UInt8(1)
 const gc_event         = UInt8(2)
 
+const unpruned = []
+
 # This allows Revise to correct the location information in profiles
 if VERSION >= v"1.5.0-DEV.9"
     # ref https://github.com/JuliaLang/julia/pull/34235
@@ -56,24 +58,10 @@ See also [`unique_ips`](@ref).
 """
 lineinfodict(s::Set) = lineinfodict(collect(s))
 
-function flamegraph(data = Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off)
+function flamegraph(data = Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, pruned=unpruned)
     if lidict === nothing
         lidict = lineinfodict(unique(data))
     end
-    # # Clear out the unknown stackframes
-    # unknowns = Set{eltype(data)}()
-    # for (k, v) in lidict
-    #     iszero(k) && continue
-    #     if length(v) == 1
-    #         sf = v[1]
-    #         if sf == StackTraces.UNKNOWN || sf.line == sf.pointer
-    #             push!(unknowns, k)
-    #         end
-    #     end
-    # end
-    # @show unknowns
-    # keep = [ip ∉ unknowns for ip in data]
-    # data = data[keep]
     root = combine ? StackFrameTree{StackFrame}() : StackFrameTree{UInt64}()
     # Build the tree with C=true, regardless of user setting. This is because
     # we need the C frames to set the status flag. They will be omitted by `flamegraph!`
@@ -88,7 +76,7 @@ function flamegraph(data = Profile.fetch(); lidict=nothing, C=false, combine=tru
         return nothing
     end
     root.count = sum(pr->pr.second.count, root.down)  # root count seems borked
-    return flamegraph!(Node(NodeData(root.frame, status(root, C), 1:root.count)), root; C=C)
+    return flamegraph!(Node(NodeData(root.frame, status(root, C), 1:root.count)), root; C=C, pruned=pruned)
 end
 
 function status(node, C::Bool)
@@ -113,22 +101,29 @@ function status(sf::StackFrame)
     return st
 end
 
-function flamegraph!(graph, ptree; C=false, hstart=first(graph.data.hspan))
+function flamegraph!(graph, ptree; C=false, pruned=unpruned, hstart=first(graph.data.hspan))
     nexts = collect(values(ptree.down))
     lilist = collect(frame.frame for frame in nexts)
     p = Profile.liperm(lilist)
     for i in p
         down = nexts[i]
         frame, count = down.frame, down.count
+        ispruned(frame, pruned) && continue
         if !C && frame.from_c
-            flamegraph!(graph, down; C=C, hstart=hstart)
+            flamegraph!(graph, down; C=C, pruned=pruned, hstart=hstart)
         else
             child = addchild(graph, NodeData(frame, status(down, C), hstart:hstart+count-1))
-            flamegraph!(child, down; C=C)
+            flamegraph!(child, down; C=C, pruned=pruned)
         end
         hstart += count
     end
     return graph
 end
+
+function ispruned(frame, (fname, file)::Tuple{Any,Any})
+    return frame.func == Symbol(fname) && frame.file == Symbol(file)
+end
+
+ispruned(frame, pruned) = any(t->ispruned(frame, t), pruned)
 
 end # module

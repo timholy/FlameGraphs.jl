@@ -67,6 +67,13 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
     @test isempty(n7)
     @test isempty(n8)
 
+    # pruning
+    c = g.child.child
+    @test c.child != c
+    g = flamegraph(backtraces; lidict=lidict, pruned=[(:f3, "file2")])
+    c = g.child.child
+    @test c.child == c
+
     # Now make some of them C calls
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:jl_f, :filec, 55; C=true),
