@@ -12,10 +12,10 @@ end
 
 Choose a set of colors for rendering a flame graph. There are several special colors:
 
-    - `colorbg` is the background color
-    - `colorfont` is used when annotating stackframes with text
-    - `colorrt` highlights [runtime dispatch](), typically a costly process
-    - `colorgc` highlights garbage-collection events
+- `colorbg` is the background color
+- `colorfont` is used when annotating stackframes with text
+- `colorrt` highlights [runtime dispatch](https://discourse.julialang.org/t/dynamic-dispatch/6963), typically a costly process
+- `colorgc` highlights garbage-collection events
 
 `n` specifies the number of "other" colors to choose when one of the above is not relevant.
 `FlameColors` chooses two lists of length `n`, one for even depths in the stacktrace and
@@ -62,7 +62,7 @@ flamepixels(g::Node; kwargs...) = flamepixels(default_colors, g; kwargs...)
 """
     img = flamepixels(fcolor!, g; costscale=nothing)
 
-Return a flamegraph as a matrix of RGB colors.
+Return a flamegraph as a matrix of RGB colors, customizing the color choices.
 
 ## fcolor!
 
@@ -81,8 +81,8 @@ must return the background color.
 chooses the color for the node represented by `data` (see [`NodeData`](@ref)).
 `j` corresponds to depth in the call stack and `nextidx[j]` holds the state for the next
 color choice.
-In general, if you have a list of colors, `fcolor!` should increment the index for
-`nextidx[j]` to ensure that it cycles on to the next color.
+In general, if you have a list of colors, `fcolor!` should cycle `nextidx[j]` to ensure that
+the next call to `fcolor!` with this `j` moves on to the next color.
 (However, you may not want to increment `nextidx[j]` if you are choosing the color by some
 means other than cycling through a list.)
 
@@ -121,4 +121,4 @@ function flamepixels!(fcolor!, img, g, j, nextidx, costscale)
     return img
 end
 
-scale(rng::UnitRange, costscale) = round(Int, costscale*first(rng)):round(Int, costscale*last(rng))
+scale(rng::UnitRange, costscale) = max(1, round(Int, costscale*first(rng))):round(Int, costscale*last(rng))

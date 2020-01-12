@@ -5,8 +5,8 @@ Data associated with a single node in a flamegraph. `sf` is the stack frame
 (see `?StackTraces.StackFrame`). `status` is a bitfield with information about this
 node or any "suppressed" nodes immediately called by this one:
 
-    - `status & 0x01` is nonzero for runtime dispatch
-    - `status & 0x02` is nonzero for garbage collection
+- `status & 0x01` is nonzero for runtime dispatch
+- `status & 0x02` is nonzero for garbage collection
 
 By default, C-language stackframes are omitted, but information about
 their identity is accumulated into their caller's `status`.
