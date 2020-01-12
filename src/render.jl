@@ -101,21 +101,21 @@ imposes an upper bound of approximately 1000 pixels along the first dimension, w
 """
 function flamepixels(fcolor!, g::Node; costscale=nothing)
     ndata = g.data
-    w = length(ndata.hspan)
+    w = length(ndata.span)
     if costscale === nothing
         costscale = w < 10^3 ? 1.0 : 10^3/w
     end
     h = depth(g)
     img = fill(fcolor!(), round(Int, w*costscale), h)
     nextidx = fill(1, h)
-    img[scale(ndata.hspan, costscale), 1] .= fcolor!(nextidx, 1, ndata)
+    img[scale(ndata.span, costscale), 1] .= fcolor!(nextidx, 1, ndata)
     return flamepixels!(fcolor!, img, g, 2, nextidx, costscale)
 end
 
 function flamepixels!(fcolor!, img, g, j, nextidx, costscale)
     for c in g
         ndata = c.data
-        img[scale(ndata.hspan, costscale), j] .= fcolor!(nextidx, j, ndata)
+        img[scale(ndata.span, costscale), j] .= fcolor!(nextidx, j, ndata)
         flamepixels!(fcolor!, img, c, j+1, nextidx, costscale)
     end
     return img
