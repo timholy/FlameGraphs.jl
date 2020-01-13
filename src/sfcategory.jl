@@ -62,8 +62,11 @@ StackFrameCategory(modcat = default_modcat,
                    loccat = default_loccat) =
     StackFrameCategory(modcat, loccat, colorant"white", colorant"black")
 
-# Background color
-(sfc::StackFrameCategory)() = sfc.colorbg
+function (sfc::StackFrameCategory)(s::Symbol)
+    s === :bg && return sfc.colorbg
+    s === :font && return sfc.colorfont
+    throw(ArgumentError("unrecognized color id ", s))
+end
 
 function (sfc::StackFrameCategory)(nextidx, j, nodedata)
     sf = nodedata.sf

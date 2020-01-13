@@ -11,6 +11,7 @@ FlameGraphs.NodeData
 
 ```@docs
 flamepixels
+flametags
 FlameColors
 StackFrameCategory
 FlameGraphs.default_modcat
