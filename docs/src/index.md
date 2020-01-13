@@ -90,7 +90,7 @@ julia> img = flamepixels(g)
 You can display this in an image viewer, but for interactive exploration `ProfileView.jl` adds additional features.
 
 The coloration scheme can be customized as described in the documentation for [`flamepixels`](@ref), with the default coloration provided by [`FlameColors`](@ref).
-This default chooses cycling colors to distinguish different stack frames, while coloring runtime dispatch red and garbage-collection orange.
+This default uses cycling colors to distinguish different stack frames, while coloring runtime dispatch red and garbage-collection orange.
 If we profile "time to first plot,"
 
 ```
