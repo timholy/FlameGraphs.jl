@@ -151,6 +151,11 @@ end
     @test img[4,4] == fc.colorbg
     @test all(img[1:2,5] .== fc.colorsodd[1])
     @test all(img[3:4,5] .== fc.colorbg)
+    imgtags = flametags(g, img)
+    @test axes(imgtags) == axes(img)
+    @test imgtags[1,2] == lidict[1]
+    @test imgtags[4,2] == lidict[7]
+    @test imgtags[4,end] == StackTraces.UNKNOWN
 
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:jl_f, :filec, 55; C=true),
