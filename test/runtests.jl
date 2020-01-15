@@ -1,6 +1,6 @@
 using FlameGraphs, AbstractTrees
 using Base.StackTraces: StackFrame
-using Test
+using Test, Profile
 
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
@@ -192,4 +192,17 @@ end
     @test img[4,3] == fc.colorsodd[3]
     @test img[1,4] == fc.colorseven[1]
     @test all(img[2:4,4] .== fc.colorbg)
+end
+
+@testset "Profiling" begin
+     A = randn(100, 100, 200)
+     Profile.clear()
+     @profile mapslices(sum, A; dims=2)
+     g = flamegraph()
+     @test FlameGraphs.depth(g) > 10
+     A = [1,2,3]
+     sum(A)
+     Profile.clear()
+     @profile sum(A)
+     Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
 end
