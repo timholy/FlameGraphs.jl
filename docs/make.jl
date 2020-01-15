@@ -2,14 +2,14 @@ using Documenter, FlameGraphs
 
 makedocs(;
     modules=[FlameGraphs],
-    format=Documenter.HTML(),
+    format=Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     pages=[
         "Home" => "index.md",
+        "reference.md"
     ],
     repo="https://github.com/timholy/FlameGraphs.jl/blob/{commit}{path}#L{line}",
     sitename="FlameGraphs.jl",
     authors="Tim Holy <tim.holy@gmail.com>",
-    assets=String[],
 )
 
 deploydocs(;

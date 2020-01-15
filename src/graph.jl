@@ -1,26 +1,26 @@
 """
-    data = NodeData(sf::StackFrame, status::UInt8, hspan::UnitRange{Int})
+    data = NodeData(sf::StackFrame, status::UInt8, span::UnitRange{Int})
 
 Data associated with a single node in a flamegraph. `sf` is the stack frame
 (see `?StackTraces.StackFrame`). `status` is a bitfield with information about this
 node or any "suppressed" nodes immediately called by this one:
 
-    - `status & 0x01` is nonzero for runtime dispatch
-    - `status & 0x02` is nonzero for garbage collection
+- `status & 0x01` is nonzero for runtime dispatch
+- `status & 0x02` is nonzero for garbage collection
 
 By default, C-language stackframes are omitted, but information about
 their identity is accumulated into their caller's `status`.
 
-`length(hspan)` is the number of times this stackframe was captured at this
+`length(span)` is the number of times this stackframe was captured at this
 depth and location in the flame graph. The starting index begins with the caller's
-starting `hspan` but increments to ensure each child's `hspan` occupies a distinct
-subset of the caller's `hspan`. Concretely, `hspan` is the range of indexes
+starting `span` but increments to ensure each child's `span` occupies a distinct
+subset of the caller's `span`. Concretely, `span` is the range of indexes
 that will be occupied by this stackframe when the flame graph is rendered.
 """
 struct NodeData
     sf::StackFrame
     status::UInt8             # a bitfield, see below
-    hspan::UnitRange{Int}
+    span::UnitRange{Int}
 end
 
 # status bitfield values
@@ -129,7 +129,7 @@ function status(sf::StackFrame)
     return st
 end
 
-function flamegraph!(graph, ptree; C=false, pruned=defaultpruned, hstart=first(graph.data.hspan))
+function flamegraph!(graph, ptree; C=false, pruned=defaultpruned, hstart=first(graph.data.span))
     nexts = collect(values(ptree.down))
     lilist = collect(frame.frame for frame in nexts)
     p = Profile.liperm(lilist)
