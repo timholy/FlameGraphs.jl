@@ -1,6 +1,6 @@
-using FlameGraphs, AbstractTrees
+using FlameGraphs, AbstractTrees, Colors
 using Base.StackTraces: StackFrame
-using Test
+using Test, Profile
 
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
@@ -66,6 +66,21 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
     @test n8.data.span == 1:2
     @test isempty(n7)
     @test isempty(n8)
+
+    io = IOBuffer()
+    print_tree(io, g)
+    str = String(take!(io))
+    @test str == """
+FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
+├─ FlameGraphs.NodeData(f1 at file1:1, 0x00, 1:3)
+│  ├─ FlameGraphs.NodeData(f2 at file1:5, 0x00, 1:2)
+│  │  └─ FlameGraphs.NodeData(f3 at file2:1, 0x00, 1:2)
+│  │     └─ FlameGraphs.NodeData(f2 at file1:15, 0x00, 1:2)
+│  └─ FlameGraphs.NodeData(f4 at file1:20, 0x00, 3:3)
+│     └─ FlameGraphs.NodeData(f5 at file3:1, 0x00, 3:3)
+└─ FlameGraphs.NodeData(f1 at file1:2, 0x00, 4:4)
+   └─ FlameGraphs.NodeData(f6 at file3:10, 0x00, 4:4)
+"""
 
     # pruning
     c = g.child.child
@@ -151,6 +166,11 @@ end
     @test img[4,4] == fc.colorbg
     @test all(img[1:2,5] .== fc.colorsodd[1])
     @test all(img[3:4,5] .== fc.colorbg)
+    imgtags = flametags(g, img)
+    @test axes(imgtags) == axes(img)
+    @test imgtags[1,2] == lidict[1]
+    @test imgtags[4,2] == lidict[7]
+    @test imgtags[4,end] == StackTraces.UNKNOWN
 
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:jl_f, :filec, 55; C=true),
@@ -172,4 +192,19 @@ end
     @test img[4,3] == fc.colorsodd[3]
     @test img[1,4] == fc.colorseven[1]
     @test all(img[2:4,4] .== fc.colorbg)
+end
+
+@testset "Profiling" begin
+     A = randn(100, 100, 200)
+     Profile.clear()
+     @profile mapslices(sum, A; dims=2)
+     g = flamegraph()
+     @test FlameGraphs.depth(g) > 10
+     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
+     @test any(img .== colorant"orange")
+     A = [1,2,3]
+     sum(A)
+     Profile.clear()
+     @profile sum(A)
+     Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
 end
