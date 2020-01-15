@@ -1,4 +1,4 @@
-using FlameGraphs, AbstractTrees
+using FlameGraphs, AbstractTrees, Colors
 using Base.StackTraces: StackFrame
 using Test, Profile
 
@@ -200,6 +200,8 @@ end
      @profile mapslices(sum, A; dims=2)
      g = flamegraph()
      @test FlameGraphs.depth(g) > 10
+     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
+     @test any(img .== colorant"orange")
      A = [1,2,3]
      sum(A)
      Profile.clear()
