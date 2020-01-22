@@ -14,13 +14,22 @@ but `func`, `file`, `line`, and `from_c` might be common choices.
 
 `colorbg` is the background color, and `colorfont` stores the choice of font color.
 
-# Example
+# Examples
 
 ```julia
 using Plots, Profile, FlameGraphs
 @profile plot(rand(5))    # "time to first plot"
 g = flamegraph(C=true)
 img = flamepixels(StackFrameCategory(), g)
+```
+
+Or you can tweak the coloration yourself:
+```julia
+function modcat(mod)
+    mod == Plots && return colorant"purple"
+    return nothing
+end
+img = flamepixels(StackFrameCategory(modcat), g)
 ```
 """
 struct StackFrameCategory
