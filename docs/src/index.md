@@ -31,7 +31,8 @@ julia> g = flamegraph()
 Node(FlameGraphs.NodeData(ip:0x0, 0x01, 1:125))
 ```
 
-This may not be very informative on its on; the only this this communicates clearly is that 125 samples (separate backtraces) were collected during profiling.  It becomes more meaningful with
+This may not be very informative on its own; the only thing this communicates clearly is that 125 samples (separate backtraces) were collected during profiling.  (For developers, `g` is a
+[left-child, right-sibling tree](https://github.com/JuliaCollections/LeftChildRightSiblingTrees.jl).) It becomes more meaningful with
 
 ```julia
 julia> using AbstractTrees
