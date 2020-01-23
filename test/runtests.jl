@@ -136,6 +136,20 @@ FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
     @test isempty(n4)
     @test isempty(n5)
     @test isempty(n6)
+
+    # Pruning REPL code
+    lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
+                                     2=>stackframe(:eval_user_input, "REPL.jl", 5),
+                                     3=>stackframe(:f3, :file2, 1),
+                                     4=>stackframe(:f2, :file1, 15),
+                                     5=>stackframe(:f4, :file1, 20),
+                                     6=>stackframe(:f5, :file3, 1),
+                                     7=>stackframe(:f1, :file1, 2),
+                                     8=>stackframe(:f6, :file3, 10))
+    g = flamegraph(backtraces; lidict=lidict)
+    sfc = [c.data.sf for c in g]
+    @test lidict[3] ∈ sfc
+    @test lidict[1] ∉ sfc
 end
 
 @testset "flamepixels" begin

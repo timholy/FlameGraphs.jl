@@ -16,7 +16,7 @@ AbstractTrees = "0.3"
 Colors = "0.9, 0.10, 0.11"
 FixedPointNumbers = "0.6.1, 0.7"
 IndirectArrays = "0.5"
-LeftChildRightSiblingTrees = "0.1"
+LeftChildRightSiblingTrees = "0.1.1"
 julia = "1"
 
 [extras]

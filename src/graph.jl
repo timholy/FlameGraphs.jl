@@ -26,6 +26,7 @@ end
 # status bitfield values
 const runtime_dispatch = UInt8(1)
 const gc_event         = UInt8(2)
+const repl             = UInt8(4)
 
 const defaultpruned = Tuple{Symbol,Symbol}[]
 
@@ -65,7 +66,7 @@ See also [`unique_ips`](@ref).
 lineinfodict(s::Set) = lineinfodict(collect(s))
 
 """
-    g = flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, pruned=[])
+    g = flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, norepl=true, pruned=[])
 
 Compute a graph representing profiling data. To compute it for the currently-collected
 profiling information, omit both `data` and `lidict`; if you are computing it for saved
@@ -74,19 +75,20 @@ profiling data, supply both. (`data` and `lidict` must be a matched pair from `P
 You can control the strategy with the following keywords:
 
 - `C`: if `true`, include stackframes collected from `ccall`ed code.
-- `combine`: if true, instruction pointers that correspond to the same line of code are
-  combined into a single stackframe
+- `recur` (supported on Julia 1.4+): represent recursive calls as if they corresponded to
+  iteration.
+- `norepl`: if true, the portions of stacktraces deeper than `REPL.eval_user_input` are discarded.
 - `pruned`: a list of `(funcname, filename)` pairs that trigger the termination of this branch
   of the flame graph. You can use this to prevent very "tall" graphs from deeply-recursive
   calls, e.g., `pruned = [("sort!", "sort.jl")]` would omit nodes corresponding to Julia's
   `sort!` function and anything called by it. See also `recur` for an alternative strategy.
-- `recur` (supported on Julia 1.4+): represent recursive calls as if they corresponded to
-  iteration.
+- `combine`: if true, instruction pointers that correspond to the same line of code are
+  combined into a single stackframe
 
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.
 """
-function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, pruned=defaultpruned)
+function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, norepl=true, pruned=defaultpruned)
     if lidict === nothing
         lidict = lineinfodict(unique(data))
     end
@@ -104,7 +106,11 @@ function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true,
         return nothing
     end
     root.count = sum(pr->pr.second.count, root.down)  # root count seems borked
-    return flamegraph!(Node(NodeData(root.frame, status(root, C), 1:root.count)), root; C=C, pruned=pruned)
+    g = flamegraph!(Node(NodeData(root.frame, status(root, C), 1:root.count)), root; C=C, pruned=pruned)
+    if norepl
+        prunerepl!(g)
+    end
+    return g
 end
 
 function status(node, C::Bool)
@@ -125,6 +131,9 @@ function status(sf::StackFrame)
     end
     if sf.from_c && startswith(String(sf.func), "jl_gc_")
         st |= gc_event
+    end
+    if !sf.from_c && sf.func === :eval_user_input && endswith(String(sf.file), "REPL.jl")
+        st |= repl
     end
     return st
 end
@@ -153,3 +162,25 @@ function ispruned(frame, (fname, file)::Tuple{Any,Any})
 end
 
 ispruned(frame, pruned) = any(t->ispruned(frame, t), pruned)
+
+function prunerepl!(node)
+    for c in node
+        if c.data.status & repl != 0
+            # Add children directly to the root node
+            root = node
+            replchild = c
+            while !isroot(root)
+                root = root.parent
+                replchild = replchild.parent
+            end
+            graftchildren!(root, c)
+            # Eliminate all nodes in between. This might include some that don't
+            # call REPL code, but as this is also internal it seems OK.
+            prunebranch!(replchild)
+            return true
+        else
+            prunerepl!(c) && return true
+        end
+    end
+    return false
+end
