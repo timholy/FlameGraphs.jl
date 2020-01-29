@@ -1,42 +1,64 @@
 struct FlameColors
-    colorsodd::Vector{RGB{N0f8}}
-    colorseven::Vector{RGB{N0f8}}
+    colors::Vector{RGB{N0f8}}
     colorbg::RGB{N0f8}
     colorfont::RGB{N0f8}
-    colorrt::Union{Nothing,RGB{N0f8}}
-    colorgc::Union{Nothing,RGB{N0f8}}
+    colorsrt::Vector{RGB{N0f8}}
+    colorsgc::Vector{RGB{N0f8}}
 end
 
 """
-    fcolor = FlameColors(n::Integer; colorbg=colorant"white", colorfont=colorant"black", colorrt=colorant"red", colorgc=colorant"orange")
+    fcolor = FlameColors(n::Integer=2;
+                         colorbg=colorant"white", colorfont=colorant"black",
+                         colorsrt=colorant"crimson", colorsgc=colorant"orange")
 
 Choose a set of colors for rendering a flame graph. There are several special colors:
 
 - `colorbg` is the background color
 - `colorfont` is used when annotating stackframes with text
-- `colorrt` highlights [runtime dispatch](https://discourse.julialang.org/t/dynamic-dispatch/6963), typically a costly process
-- `colorgc` highlights garbage-collection events
+- `colorsrt` highlights [runtime dispatch](https://discourse.julialang.org/t/dynamic-dispatch/6963), typically a costly process
+- `colorsgc` highlights garbage-collection events
 
 `n` specifies the number of "other" colors to choose when one of the above is not relevant.
-`FlameColors` chooses two lists of length `n`, one for even depths in the stacktrace and
-the other for odd depths in the stacktrace. Consequently, different stackframes will typically
+`FlameColors` chooses `2n` colors: the first `n` colors for odd depths in the stacktrace and
+the last `n` colors for even depths in the stacktrace. Consequently, different stackframes will typically
 be distinguishable from one another by color.
 
-While the return value is a `struct`, it is callable and can be used as the `fcolor`
-input for `flamepixels` and `flamesvg`.
+The highlighting can be disabled by passing `nothing` or a zero-element vector
+for `colorsrt` or `colorsgc`. When a single color is passed for `colorsrt` or
+`colorsgc`, this method generates four variant colors slightly different from
+the specified color. `colorsrt` or `colorsgc` can also be specified as multiple
+colors with a vector. The first half of the vector is for odd depths and the
+second half is for even depths. By using a one-element vector instead of a
+single color, the specified color is always used.
+
+While the return value is a `struct`, it is callable and can be used as the
+`fcolor` input for `flamepixels`.
 """
-function FlameColors(n::Integer; colorbg=colorant"white", colorfont=colorant"black", colorrt=colorant"red", colorgc=colorant"orange")
+function FlameColors(n::Integer=2;
+                     colorbg=colorant"white", colorfont=colorant"black",
+                     colorsrt=colorant"crimson", colorsgc=colorant"orange")
     seeds = [colorbg, colorfont]
-    colorrt !== nothing && push!(seeds, colorrt)
-    colorgc !== nothing && push!(seeds, colorgc)
-    colors = distinguishable_colors(2n+length(seeds), seeds,
-                                    lchoices=Float64[65, 70, 75, 80],
-                                    cchoices=Float64[0, 50, 60, 70],
-                                    hchoices=range(0, stop=330, length=24))
-    offset = length(seeds)
-    return FlameColors(colors[offset+1:offset+n], colors[offset+n+1:offset+2n], colorbg, colorfont, colorrt, colorgc)
+    function make_variations(color)
+        color === nothing && return RGB{N0f8}[]
+        isa(color, AbstractVector) && return color
+        c = convert(LCHab, color)
+        a = LCHab(min(c.l+2.5, 100.0), c.c+10.0, c.h-7.5)
+        b = LCHab(max(c.l-2.5, 0.0), max(c.c-10.0, 0.0), c.h+7.5)
+        RGB{N0f8}.(range(a, stop=b, length=4))
+    end
+    colorsrt = make_variations(colorsrt)
+    colorsgc = make_variations(colorsgc)
+    append!(seeds, colorsrt)
+    append!(seeds, colorsgc)
+    nseeds = length(seeds)
+    colors = distinguishable_colors(2n+nseeds, seeds,
+                                    transform=c->deuteranopic(c, 0.95),
+                                    lchoices=Float64[65, 80],
+                                    cchoices=Float64[10, 55],
+                                    hchoices=range(10, stop=350, length=18))[nseeds+1:end]
+    sort!(colors, by=c->colordiff(c, colorbg))
+    return FlameGraphs.FlameColors(colors, colorbg, colorfont, colorsrt, colorsgc)
 end
-FlameColors(; kwargs...) = FlameColors(5; kwargs...)
 
 const default_colors = FlameColors()
 
@@ -47,12 +69,18 @@ function (colors::FlameColors)(s::Symbol)
 end
 
 function (colors::FlameColors)(nextidx, j::Integer, data)
-    colors.colorrt !== nothing && (data.status & runtime_dispatch) != 0 && return colors.colorrt
-    colors.colorgc !== nothing && (data.status & gc_event) != 0 && return colors.colorgc
-    colorvec = isodd(j) ? colors.colorsodd : colors.colorseven
     idx = nextidx[j]
-    nextidx[j] = mod1(idx+1, length(colorvec))
-    return colorvec[idx]
+    nextidx[j] = idx + 1
+    if length(colors.colorsrt) > 0 && (data.status & runtime_dispatch) != 0
+        colorvec = colors.colorsrt
+    elseif length(colors.colorsgc) > 0 && (data.status & gc_event) != 0
+        colorvec = colors.colorsgc
+    else
+        colorvec = colors.colors
+    end
+    n = length(colorvec)
+    m = (n + 1)÷2
+    return colorvec[mod1(mod1(idx, m) + iseven(j) * m, n)]
 end
 
 """

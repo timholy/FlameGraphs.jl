@@ -169,16 +169,16 @@ end
     g = flamegraph(backtraces; lidict=lidict)
     img = flamepixels(g)
     fc = FlameGraphs.FlameColors()
-    @test all(img[:,1] .== fc.colorsodd[1])
-    @test all(img[1:3,2] .== fc.colorseven[1])
-    @test img[4,2] == fc.colorseven[2]
-    @test all(img[1:2,3] .== fc.colorsodd[1])
-    @test img[3,3] == fc.colorsodd[2]
-    @test img[4,3] == fc.colorsodd[3]
-    @test all(img[1:2,4] .== fc.colorseven[1])
-    @test img[3,4] == fc.colorseven[2]
+    @test all(img[:,1] .== fc.colors[1])
+    @test all(img[1:3,2] .== fc.colors[3])
+    @test img[4,2] == fc.colors[4]
+    @test all(img[1:2,3] .== fc.colors[1])
+    @test img[3,3] == fc.colors[2]
+    @test img[4,3] == fc.colors[1]
+    @test all(img[1:2,4] .== fc.colors[3])
+    @test img[3,4] == fc.colors[4]
     @test img[4,4] == fc.colorbg
-    @test all(img[1:2,5] .== fc.colorsodd[1])
+    @test all(img[1:2,5] .== fc.colors[1])
     @test all(img[3:4,5] .== fc.colorbg)
     imgtags = flametags(g, img)
     @test axes(imgtags) == axes(img)
@@ -196,16 +196,32 @@ end
                                      8=>stackframe(:f6, :file3, 10))
     g = flamegraph(backtraces; lidict=lidict)
     img = flamepixels(g)
-    @test all(img[:,1] .== fc.colorsodd[1])
+    @test all(img[:,1] .== fc.colors[1])
     # Note: only span 2:3 contributes to the rt dispatch, but since we mark the caller
     # rather than the callee, and 1:3 all are the same caller, the whole thing gets marked.
-    @test all(img[1:3,2] .== fc.colorrt)
-    @test img[4,2] == fc.colorseven[1]
-    @test img[1,3] == fc.colorsodd[1]
-    @test all(img[2:3,3] .== fc.colorsodd[2])
-    @test img[4,3] == fc.colorsodd[3]
-    @test img[1,4] == fc.colorseven[1]
+    @test all(img[1:3,2] .== fc.colorsrt[3])
+    @test img[4,2] == fc.colors[4]
+    @test img[1,3] == fc.colors[1]
+    @test all(img[2:3,3] .== fc.colors[2])
+    @test img[4,3] == fc.colors[1]
+    @test img[1,4] == fc.colors[3]
     @test all(img[2:4,4] .== fc.colorbg)
+
+    # Customizing FlameColors
+    # the classic colors which were used in FlameGraphs v0.1 or ProfileView v0.5
+    fc2 = FlameColors(
+        parse.(RGB, ["#E870DD", "#32B44E", "#1AA2FF", "#00DEE6", "#FFA49C",
+                     "#9E9E9E", "#A8A200", "#CDB9FF", "#00E5B2", "#FF5F82"]),
+        colorant"white", colorant"black", [colorant"red"], [colorant"orange"])
+    img = flamepixels(fc2, g)
+    @test all(img[:,1] .== fc2.colors[1])
+    @test all(img[1:3,2] .== fc2.colorsrt[1])
+    @test img[4,2] == fc2.colors[7]
+    @test img[1,3] == fc2.colors[1]
+    @test all(img[2:3,3] .== fc2.colors[2])
+    @test img[4,3] == fc2.colors[3]
+    @test img[1,4] == fc2.colors[6]
+    @test all(img[2:4,4] .== fc2.colorbg)
 end
 
 @testset "Profiling" begin
