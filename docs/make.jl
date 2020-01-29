@@ -2,7 +2,10 @@ using Documenter, FlameGraphs
 
 makedocs(;
     modules=[FlameGraphs],
-    format=Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
+    format=Documenter.HTML(
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        assets = ["assets/favicon.ico"],
+    ),
     pages=[
         "Home" => "index.md",
         "reference.md"
