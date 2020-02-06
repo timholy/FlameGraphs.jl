@@ -1,4 +1,4 @@
-using FlameGraphs, AbstractTrees, Colors
+using FlameGraphs, AbstractTrees, Colors, FileIO
 using Base.StackTraces: StackFrame
 using Test, Profile
 
@@ -401,4 +401,17 @@ end
      Profile.clear()
      @profile sum(A)
      Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
+end
+
+@testset "IO" begin
+    A = randn(100, 100, 200)
+    Profile.clear()
+    @profile mapslices(sum, A; dims=2)
+    fn = tempname()*".jlprof"
+    f = File(format"JLPROF", fn)
+    FlameGraphs.save(f)
+    data, lidict = FlameGraphs.load(f)
+    datar, lidictr = Profile.retrieve()
+    @test data == datar
+    @test lidictr == lidict
 end
