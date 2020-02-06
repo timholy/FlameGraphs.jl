@@ -1,6 +1,7 @@
 """
-    save(f::File)
-    save(f::File, data, lidict)
+    save(f::FileIO.File)
+    save(f::FileIO.File, data, lidict)
+    save(filename::AbstractString, data, ldict)
 
 Save profiling data to a file. If `data` and `lidict` are not supplied, they are obtained
 from
@@ -12,6 +13,9 @@ Some visualization modes, like [`StackFrameCategory`](@ref), are not available f
 such files.
 
 These files conventionally have the extension ".jlprof".
+If you just supply a string filename ending with this extension,
+you must pass `data` and `lidict` explicitly, because
+FileIO has its own interpretation of the meaning of `save` with no arguments.
 """
 function save(f::File{format"JLPROF"}, data::AbstractVector{UInt64}, lidict::Profile.LineInfoDict)
     open(f, "w") do io
@@ -42,7 +46,8 @@ end
 save(f::File{format"JLPROF"}) = save(f, Profile.retrieve()...)
 
 """
-    data, lidict = load(f::File)
+    data, lidict = load(f::FileIO.File)
+    data, lidict = load(filename::AbstractString)
 
 Load profiling data. You can reconstruct the flame graph from `flamegraph(data; lidict=lidict)`.
 """

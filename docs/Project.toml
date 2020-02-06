@@ -1,5 +1,9 @@
 [deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 
 [compat]
+AbstractTrees = "0.3"
 Documenter = "0.24"
+FileIO = "1.2.2"

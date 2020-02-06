@@ -1,4 +1,4 @@
-using Documenter, FlameGraphs
+using Documenter, FlameGraphs, FileIO
 
 makedocs(;
     modules=[FlameGraphs],
