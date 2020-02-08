@@ -66,7 +66,7 @@ See also [`unique_ips`](@ref).
 lineinfodict(s::Set) = lineinfodict(collect(s))
 
 """
-    g = flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, norepl=true, pruned=[])
+    g = flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, norepl=true, pruned=[], filter=nothing)
 
 Compute a graph representing profiling data. To compute it for the currently-collected
 profiling information, omit both `data` and `lidict`; if you are computing it for saved
@@ -84,11 +84,16 @@ You can control the strategy with the following keywords:
   `sort!` function and anything called by it. See also `recur` for an alternative strategy.
 - `combine`: if true, instruction pointers that correspond to the same line of code are
   combined into a single stackframe
+- `filter`: drop all branches that do not satisfy the filter condition. `Condition` can be `string`, `regex`
+  or any function, that can be applied to `NodeData`. For example, `filter = "mapslices"` or equivalently
+  `filter = x -> (x.sf.func == :mapslices)` removes all branches that do not contain `mapslices` Node as a child
+  or ancestor.
 
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.
 """
-function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true, recur=:off, norepl=true, pruned=defaultpruned)
+function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true,
+        recur=:off, norepl=true, pruned=defaultpruned, filter=nothing)
     if lidict === nothing
         lidict = lineinfodict(unique(data))
     end
@@ -110,6 +115,11 @@ function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true,
     if norepl
         prunerepl!(g)
     end
+
+    if filter != nothing
+        filtergraph!(g, filter)
+    end
+
     return g
 end
 
@@ -136,6 +146,39 @@ function status(sf::StackFrame)
         st |= repl
     end
     return st
+end
+
+function nodematches(needle::Union{AbstractString,Regex,AbstractChar}, g::Node)
+    return occursin(needle, string(g.data.sf))
+end
+
+function nodematches(needle::Function, g::Node)
+    return needle(g.data)
+end
+
+function canfind(needle, g::Node, memo = Dict{Node, Bool}())
+    haskey(memo, g) && return memo[g]
+    if nodematches(needle, g)
+        memo[g] = true
+    else
+        memo[g] = any(canfind(needle, child, memo) for child in g)
+    end
+    return memo[g]
+end
+
+function filtergraph!(g::Node, filter, memo = Dict{Node, Bool}())
+    if !canfind(filter, g, memo)
+        if isroot(g)
+            @warn "The filter condition results in the root node pruning, so the filter is ignored"
+        else
+            prunebranch!(g)
+        end
+    else
+        for child in g
+            nodematches(filter, child) && continue
+            filtergraph!(child, filter, memo)
+        end
+    end
 end
 
 function flamegraph!(graph, ptree; C=false, pruned=defaultpruned, hstart=first(graph.data.span))
