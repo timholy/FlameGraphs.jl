@@ -5,12 +5,13 @@ using Test, Profile
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
 
+
 @testset "flamegraph" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
-                        0, 6, 5, 1,
-                        0, 8, 7,
-                        0, 4, 3, 2, 1,
-                        0]
+    0, 6, 5, 1,
+    0, 8, 7,
+    0, 4, 3, 2, 1,
+    0]
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -150,6 +151,169 @@ FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
     sfc = [c.data.sf for c in g]
     @test lidict[3] ∈ sfc
     @test lidict[1] ∉ sfc
+end
+
+@testset "flamegraph string filtering" begin
+    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+        0, 6, 5, 1,
+        0, 8, 7,
+        0, 4, 3, 2, 1,
+        0]
+    lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
+                                     2=>stackframe(:f2, :file1, 5),
+                                     3=>stackframe(:f3, :file2, 1),
+                                     4=>stackframe(:f2, :file1, 15),
+                                     5=>stackframe(:f4, :file1, 20),
+                                     6=>stackframe(:f5, :file3, 1),
+                                     7=>stackframe(:f1, :file1, 2),
+                                     8=>stackframe(:f6, :file3, 10))
+    g = flamegraph(backtraces; lidict=lidict, filter = "f2")
+    level1 = collect(g)
+    @test length(level1) == 1
+    n1 = level1[1]
+    @test n1.data.sf.func == :f1
+    @test n1.data.sf.line == 1
+    @test n1.data.span == 1:3
+    level2 = collect(n1)
+    @test length(level2) == 1
+    n2 = level2[1]
+    @test n2.data.sf.func == :f2
+    @test n2.data.sf.line == 5
+    @test n2.data.span == 1:2
+    level3 = collect(n2)
+    @test length(level3) == 1
+    n3 = level3[1]
+    @test n3.data.sf.func == :f3
+    @test n3.data.sf.line == 1
+    @test n3.data.span == 1:2
+    level4 = collect(n3)
+    @test length(level4) == 1
+    n4 = level4[1]
+    @test n4.data.sf.func == :f2
+    @test n4.data.sf.line == 15
+    @test n4.data.span == 1:2
+    @test isempty(collect(n4))
+end
+
+@testset "flamegraph function filtering" begin
+    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+        0, 6, 5, 1,
+        0, 8, 7,
+        0, 4, 3, 2, 1,
+        0]
+
+    lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
+                                     2=>stackframe(:f2, :file1, 5),
+                                     3=>stackframe(:f3, :file2, 1),
+                                     4=>stackframe(:f2, :file1, 15),
+                                     5=>stackframe(:f4, :file1, 20),
+                                     6=>stackframe(:f5, :file3, 1),
+                                     7=>stackframe(:f1, :file1, 2),
+                                     8=>stackframe(:f6, :file3, 10))
+
+    g = flamegraph(backtraces; lidict=lidict, filter = x -> (x.sf.func == :f1) & (x.sf.line == 1))
+    level1 = collect(g)
+    @test length(level1) == 1
+    n1 = level1[1]
+    @test n1.data.sf.func == :f1
+    @test n1.data.sf.line == 1
+    @test n1.data.span == 1:3
+    level2 = collect(n1)
+    @test length(level2) == 2
+    n2, n2b = level2
+    @test n2.data.sf.func == :f2
+    @test n2.data.sf.line == 5
+    @test n2.data.span == 1:2
+    @test n2b.data.sf.func == :f4
+    @test n2b.data.sf.line == 20
+    @test n2b.data.span == 3:3
+
+    level3 = collect(n2)
+    @test length(level3) == 1
+    n3 = level3[1]
+    @test n3.data.sf.func == :f3
+    @test n3.data.sf.line == 1
+    @test n3.data.span == 1:2
+    level3b = collect(n2b)
+    @test length(level3b) == 1
+    n3b = level3b[1]
+    @test n3b.data.sf.func == :f5
+    @test n3b.data.sf.line == 1
+    @test n3b.data.span == 3:3
+    @test isempty(collect(n3b))
+
+    level4 = collect(n3)
+    @test length(level4) == 1
+    n4 = level4[1]
+    @test n4.data.sf.func == :f2
+    @test n4.data.sf.line == 15
+    @test n4.data.span == 1:2
+    @test isempty(collect(n4))
+end
+
+@testset "flamegraph wrong filtering is ignored" begin
+    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+        0, 6, 5, 1,
+        0, 8, 7,
+        0, 4, 3, 2, 1,
+        0]
+
+    lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
+                                     2=>stackframe(:f2, :file1, 5),
+                                     3=>stackframe(:f3, :file2, 1),
+                                     4=>stackframe(:f2, :file1, 15),
+                                     5=>stackframe(:f4, :file1, 20),
+                                     6=>stackframe(:f5, :file3, 1),
+                                     7=>stackframe(:f1, :file1, 2),
+                                     8=>stackframe(:f6, :file3, 10))
+
+    g = (@test_logs (:warn, "The filter condition results in the root node pruning, so the filter is ignored") flamegraph(backtraces; lidict=lidict, filter = "f7"))
+    @test all(node->node.data.status == 0, PostOrderDFS(g))
+    level1 = collect(g)
+    @test length(level1) == 2
+    n1, n2 = level1
+    @test n1.data.sf.func === :f1
+    @test n1.data.sf.line == 1
+    @test n1.data.span == 1:3
+    @test n2.data.sf.func === :f1
+    @test n2.data.sf.line == 2
+    @test n2.data.span == 4:4
+    level2a = collect(n1)
+    @test length(level2a) == 2
+    n3, n4 = level2a
+    @test n3.data.sf.func === :f2
+    @test n3.data.sf.line == 5
+    @test n3.data.span == 1:2
+    @test n4.data.sf.func === :f4
+    @test n4.data.sf.line == 20
+    @test n4.data.span == 3:3
+    level2b = collect(n2)
+    @test length(level2b) == 1
+    n5 = level2b[1]
+    @test n5.data.sf.func === :f6
+    @test n5.data.sf.line == 10
+    @test n5.data.span == 4:4
+    level3a = collect(n3)
+    @test length(level3a) == 1
+    n6 = level3a[1]
+    @test n6.data.sf.func === :f3
+    @test n6.data.sf.line == 1
+    @test n6.data.span == 1:2
+    level3b = collect(n4)
+    @test length(level3b) == 1
+    n7 = level3b[1]
+    @test n7.data.sf.func === :f5
+    @test n7.data.sf.line == 1
+    @test n7.data.span == 3:3
+    @test isempty(n5)
+    level4a = collect(n6)
+    @test length(level4a) == 1
+    n8 = level4a[1]
+    @test n8.data.sf.func === :f2
+    @test n8.data.sf.line == 15
+    @test n8.data.span == 1:2
+    @test isempty(n7)
+    @test isempty(n8)
 end
 
 @testset "flamepixels" begin
