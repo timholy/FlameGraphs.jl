@@ -8,10 +8,10 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
 
 @testset "flamegraph" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
-    0, 6, 5, 1,
-    0, 8, 7,
-    0, 4, 3, 2, 1,
-    0]
+                        0, 6, 5, 1,
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -155,10 +155,10 @@ end
 
 @testset "flamegraph string filtering" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
-        0, 6, 5, 1,
-        0, 8, 7,
-        0, 4, 3, 2, 1,
-        0]
+                        0, 6, 5, 1,
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -197,10 +197,10 @@ end
 
 @testset "flamegraph function filtering" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
-        0, 6, 5, 1,
-        0, 8, 7,
-        0, 4, 3, 2, 1,
-        0]
+                        0, 6, 5, 1,
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
 
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
@@ -253,10 +253,10 @@ end
 
 @testset "flamegraph wrong filtering is ignored" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
-        0, 6, 5, 1,
-        0, 8, 7,
-        0, 4, 3, 2, 1,
-        0]
+                        0, 6, 5, 1,
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
 
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),

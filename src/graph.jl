@@ -148,17 +148,17 @@ function status(sf::StackFrame)
     return st
 end
 
-function Base.:occursin(needle::Union{AbstractString,Regex,AbstractChar}, g::Node)
+function nodematches(needle::Union{AbstractString,Regex,AbstractChar}, g::Node)
     return occursin(needle, string(g.data.sf))
 end
 
-function Base.:occursin(needle::Function, g::Node)
+function nodematches(needle::Function, g::Node)
     return needle(g.data)
 end
 
 function canfind(needle, g::Node, memo = Dict{Node, Bool}())
     haskey(memo, g) && return memo[g]
-    if occursin(needle, g)
+    if nodematches(needle, g)
         memo[g] = true
     else
         memo[g] = any(canfind(needle, child, memo) for child in g)
@@ -175,7 +175,7 @@ function filtergraph!(g::Node, filter, memo = Dict{Node, Bool}())
         end
     else
         for child in g
-            occursin(filter, child) && continue
+            nodematches(filter, child) && continue
             filtergraph!(child, filter, memo)
         end
     end
