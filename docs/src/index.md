@@ -8,7 +8,7 @@ FlameGraphs is used by visualization packages like [ProfileView](https://github.
 
 The core function of FlameGraphs is to compute a tree representation of a set of backtraces collected by Julia's [sampling profiler](https://docs.julialang.org/en/latest/manual/profile/). For a demonstration we'll use the following function:
 
-```jldoctest profile_test; filter=r", [0-9]+:[0-9]+\)"
+```jldoctest profile_test; filter=[r", [0-9]+:[0-9]+\)", r"0x0[123]"]
 julia> function profile_test(n)
            for i = 1:n
                A = randn(100,100,20)
@@ -36,7 +36,7 @@ This may not be very informative on its own; the only thing this communicates cl
 (If you run this example yourself, you might get a different number of samples depending on how fast your machine is and which operating system you use.)
 It becomes more meaningful with
 
-```jldoctest profile_test; filter=[r"[├└│].*$", r", [0-9]+:[0-9]+\)"]
+```jldoctest profile_test; filter=[r"^\s*[├└│⋮].*$", r", [0-9]+:[0-9]+\)", r"0x0[123]"]
 julia> using AbstractTrees
 
 julia> print_tree(g)
@@ -47,6 +47,7 @@ FlameGraphs.NodeData(ip:0x0, 0x01, 1:62)
    │  └─ FlameGraphs.NodeData(randn at normal.jl:190 [inlined], 0x00, 1:15)
    │     └─ FlameGraphs.NodeData(randn(::Random.MersenneTwister, ::Type{Float64}, ::Int64, ::Int64, ::Vararg{Int64,N} where N) at normal.jl:184, 0x01, 1:15)
    │        └─ FlameGraphs.NodeData(randn!(::Random.MersenneTwister, ::Array{Float64,3}) at normal.jl:173, 0x00, 2:15)
+[...]
 ```
 
 Each node of the tree consists of a `StackFrame` indicating the file, function, and line number of a particular entry in one or more backtraces, a status flag, and a range that corresponds to the horizontal span of a particular node when the graph is rendered.  See [`FlameGraphs.NodeData`](@ref) for more information.
