@@ -17,3 +17,10 @@ StackFrameCategory
 FlameGraphs.default_modcat
 FlameGraphs.default_loccat
 ```
+
+## I/O
+
+```@docs
+FlameGraphs.save
+FlameGraphs.load
+```
