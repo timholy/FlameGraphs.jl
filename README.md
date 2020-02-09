@@ -2,6 +2,7 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://timholy.github.io/FlameGraphs.jl/stable)
 [![Build Status](https://travis-ci.com/timholy/FlameGraphs.jl.svg?branch=master)](https://travis-ci.com/timholy/FlameGraphs.jl)
+[![PkgEval][pkgeval-img]][pkgeval-url]
 [![Codecov](https://codecov.io/gh/timholy/FlameGraphs.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/timholy/FlameGraphs.jl)
 
 FlameGraphs is a package that adds functionality to Julia's `Profile` standard library. It is directed primarily at the algorithmic side of producing [flame graphs](http://www.brendangregg.com/flamegraphs.html), but includes some "format agnostic" rendering code.
@@ -9,6 +10,11 @@ FlameGraphs is a package that adds functionality to Julia's `Profile` standard l
 You might use FlameGraphs on its own, but users should consider one of its downstream packages:
 
 - [ProfileView](https://github.com/timholy/ProfileView.jl), a graphical user interface (GUI) based on [Gtk](https://github.com/JuliaGraphics/Gtk.jl) for displaying and interacting with flame graphs
-- [ProfileSVG](https://github.com/timholy/ProfileSVG.jl), a package for writing flame graphs to SVG format, and which can also be used interactively in Jupyter notebooks.
+- [Juno](https://junolab.org/), a development environment that supports profile visualization
+- [ProfileVega](https://github.com/davidanthoff/ProfileVega.jl), the recommended package for display in Jupyter notebooks
+- [ProfileSVG](https://github.com/timholy/ProfileSVG.jl), a package for writing flame graphs to SVG format
 
 See the documentation for details.
+
+[pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/F/FlameGraphs.svg
+[pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html
