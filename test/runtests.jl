@@ -316,6 +316,60 @@ end
     @test isempty(n8)
 end
 
+@testset "differential flame graphs" begin
+    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+                        0, 6, 5, 1,
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
+    lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
+                                     2=>stackframe(:f2, :file1, 5),
+                                     3=>stackframe(:f3, :file2, 1),
+                                     4=>stackframe(:f2, :file1, 15),
+                                     5=>stackframe(:f4, :file1, 20),
+                                     6=>stackframe(:f5, :file3, 1),
+                                     7=>stackframe(:f1, :file1, 2),
+                                     8=>stackframe(:f6, :file3, 10))
+    g = flamegraph(backtraces; lidict=lidict)
+
+    backtraces2 = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+                        0, 8, 7,
+                        0, 4, 3, 2, 1,
+                        0]
+
+    g2 = flamegraph(backtraces2; lidict=lidict)
+
+    diffg = diffflamegraph(g2, g, simplify = false)
+    io = IOBuffer()
+    print_tree(io, diffg)
+    str = String(take!(io))
+    @test str == """
+FlameGraphs.NodeDiffData(ip:0x0, 0x00, 1:3, -1)
+├─ FlameGraphs.NodeDiffData(f1 at file1:1, 0x00, 1:2, -1)
+│  └─ FlameGraphs.NodeDiffData(f2 at file1:5, 0x00, 1:2, 0)
+│     └─ FlameGraphs.NodeDiffData(f3 at file2:1, 0x00, 1:2, 0)
+│        └─ FlameGraphs.NodeDiffData(f2 at file1:15, 0x00, 1:2, 0)
+└─ FlameGraphs.NodeDiffData(f1 at file1:2, 0x00, 3:3, 0)
+   └─ FlameGraphs.NodeDiffData(f6 at file3:10, 0x00, 3:3, 0)
+"""
+
+    diffg = diffflamegraph(g2, g, simplify = false, negate = true)
+    io = IOBuffer()
+    print_tree(io, diffg)
+    str = String(take!(io))
+    @test str == """
+FlameGraphs.NodeDiffData(ip:0x0, 0x00, 1:4, 1)
+├─ FlameGraphs.NodeDiffData(f1 at file1:1, 0x00, 1:3, 1)
+│  ├─ FlameGraphs.NodeDiffData(f2 at file1:5, 0x00, 1:2, 0)
+│  │  └─ FlameGraphs.NodeDiffData(f3 at file2:1, 0x00, 1:2, 0)
+│  │     └─ FlameGraphs.NodeDiffData(f2 at file1:15, 0x00, 1:2, 0)
+│  └─ FlameGraphs.NodeDiffData(f4 at file1:20, 0x00, 3:3, 0)
+│     └─ FlameGraphs.NodeDiffData(f5 at file3:1, 0x00, 3:3, 0)
+└─ FlameGraphs.NodeDiffData(f1 at file1:2, 0x00, 4:4, 0)
+   └─ FlameGraphs.NodeDiffData(f6 at file3:10, 0x00, 4:4, 0)
+"""
+end
+
 @testset "flamepixels" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
                         0, 6, 5, 1,
