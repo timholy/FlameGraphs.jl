@@ -1,7 +1,7 @@
 # FlameGraphs.jl
 
 FlameGraphs is a package that adds functionality to Julia's `Profile` standard library. It is directed at the algorithmic side of producing [flame graphs](http://www.brendangregg.com/flamegraphs.html), but includes some "format agnostic" rendering code.
-FlameGraphs is used by visualization packages like [ProfileView](https://github.com/timholy/ProfileView.jl) and
+FlameGraphs is used by IDEs like [Juno](https://github.com/JunoLab/Juno.jl) and visualization packages like [ProfileView](https://github.com/timholy/ProfileView.jl), [ProfileVega](https://github.com/davidanthoff/ProfileVega.jl), and
 [ProfileSVG](https://github.com/timholy/ProfileSVG.jl).
 
 ## Computing a flame graph
