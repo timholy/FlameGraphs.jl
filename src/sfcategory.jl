@@ -62,8 +62,8 @@ function default_loccat(sf::StackFrame)
     file = String(sf.file)
     occursin("LLVM", file) && return colorant"yellow"
     sf.from_c && return colorant"orange"
-    occursin("compiler", file) && return colorant"gray60"
-    startswith(file, "./") && return colorant"lightblue"
+    occursin(r"^\.[/\\]compiler[/\\]", file) && return colorant"gray60"
+    occursin(r"^\.[/\\]", file) && return colorant"lightblue"
     return colorant"red"   # uncategorized
 end
 

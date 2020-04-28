@@ -353,11 +353,11 @@ end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:jl_f, :filec, 55; C=true),
                                      3=>stackframe(:jl_invoke, :file2, 1; C=true),
-                                     4=>stackframe(:f2, :file1, 15),
+                                     4=>stackframe(:_ZL, Symbol("libLLVM-8.0.so"), 15),
                                      5=>stackframe(:f4, :file1, 20),
-                                     6=>stackframe(:f5, :file3, 1),
+                                     6=>stackframe(:copy, Symbol(".\\expr.jl"), 1), # on Windows
                                      7=>stackframe(:f1, :file1, 2),
-                                     8=>stackframe(:f6, :file3, 10))
+                                     8=>stackframe(:typeinf, Symbol("./compiler/typeinfer.jl"), 10))
     g = flamegraph(backtraces; lidict=lidict)
     img = flamepixels(g)
     @test all(img[:,1] .== fc.colors[1])
@@ -386,6 +386,17 @@ end
     @test img[4,3] == fc2.colors[3]
     @test img[1,4] == fc2.colors[6]
     @test all(img[2:4,4] .== fc2.colorbg)
+
+    img = flamepixels(StackFrameCategory(), g)
+    @test all(img[:,1] .== colorant"orange")
+    @test all(img[1:3,2] .== colorant"red")
+    @test img[4,2] == colorant"red"
+    @test img[1,3] == colorant"red"
+    @test all(img[2:3,3] .== colorant"yellow")
+    @test img[4,3] == colorant"gray60"
+    @test img[1,4] == colorant"lightblue"
+    @test all(img[2:4,4] .== colorant"white")
+    @show img
 end
 
 @testset "Profiling" begin
