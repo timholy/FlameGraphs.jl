@@ -65,7 +65,7 @@ const default_colors = FlameColors()
 function (colors::FlameColors)(s::Symbol)
     s === :bg && return colors.colorbg
     s === :font && return colors.colorfont
-    throw(ArgumentError("unrecognized color id ", s))
+    throw(ArgumentError("unrecognized color id :$s"))
 end
 
 function (colors::FlameColors)(nextidx, j::Integer, data)

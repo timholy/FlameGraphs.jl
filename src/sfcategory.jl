@@ -74,7 +74,7 @@ StackFrameCategory(modcat = default_modcat,
 function (sfc::StackFrameCategory)(s::Symbol)
     s === :bg && return sfc.colorbg
     s === :font && return sfc.colorfont
-    throw(ArgumentError("unrecognized color id ", s))
+    throw(ArgumentError("unrecognized color id :$s"))
 end
 
 function (sfc::StackFrameCategory)(nextidx, j, nodedata)
