@@ -332,7 +332,10 @@ end
                                      8=>stackframe(:f6, :file3, 10))
     g = flamegraph(backtraces; lidict=lidict)
     img = flamepixels(g)
-    fc = FlameGraphs.FlameColors()
+    fc = FlameColors()
+    @test fc(:bg) === fc.colorbg
+    @test_throws ArgumentError fc(:unknown)
+
     @test all(img[:,1] .== fc.colors[1])
     @test all(img[1:3,2] .== fc.colors[3])
     @test img[4,2] == fc.colors[4]
@@ -387,7 +390,11 @@ end
     @test img[1,4] == fc2.colors[6]
     @test all(img[2:4,4] .== fc2.colorbg)
 
-    img = flamepixels(StackFrameCategory(), g)
+    sfc = StackFrameCategory()
+    @test sfc(:bg) == sfc.colorbg
+    @test_throws ArgumentError sfc(:unknown)
+
+    img = flamepixels(sfc, g)
     @test all(img[:,1] .== colorant"orange")
     @test all(img[1:3,2] .== colorant"red")
     @test img[4,2] == colorant"red"
@@ -396,7 +403,6 @@ end
     @test img[4,3] == colorant"gray60"
     @test img[1,4] == colorant"lightblue"
     @test all(img[2:4,4] .== colorant"white")
-    @show img
 end
 
 @testset "Profiling" begin
