@@ -17,15 +17,16 @@ If you just supply a string filename ending with this extension,
 you must pass `data` and `lidict` explicitly, because
 FileIO has its own interpretation of the meaning of `save` with no arguments.
 """
-function save(f::File{format"JLPROF"}, data::AbstractVector{UInt64}, lidict::Profile.LineInfoDict)
+function save(f::File{format"JLPROF"}, data::AbstractVector{<:Unsigned}, lidict::Profile.LineInfoDict)
+    data_u64 = convert(AbstractVector{UInt64}, data)
     open(f, "w") do io
         write(io, magic(format"JLPROF"))
         # Write an endianness revealer
         write(io, 0x01020304)
         # Write an indicator that this is data/lidict format
         write(io, 0x01)
-        write(io, Int64(length(data)))
-        write(io, data)
+        write(io, Int64(length(data_u64)))
+        write(io, data_u64)
         write(io, Int64(length(lidict)))
         for (k, v) in lidict
             write(io, k)

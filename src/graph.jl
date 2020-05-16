@@ -33,10 +33,10 @@ const defaultpruned = Tuple{Symbol,Symbol}[]
 # This allows Revise to correct the location information in profiles
 if VERSION >= v"1.5.0-DEV.9"
     # ref https://github.com/JuliaLang/julia/pull/34235
-    lineinfodict(data::Vector{UInt64}) = Profile.getdict(data)
+    lineinfodict(data::Vector{<:Unsigned}) = Profile.getdict(data)
 else
     # Use the definition of Profile.getdict from Julia 1.5.0-DEV.9+
-    function lineinfodict(data::Vector{UInt64})
+    function lineinfodict(data::Vector{<:Unsigned})
         # Lookup is expensive, so do it only once per ip.
         udata = unique(data)
         dict = Profile.LineInfoDict()
@@ -97,14 +97,15 @@ function flamegraph(data=Profile.fetch(); lidict=nothing, C=false, combine=true,
     if lidict === nothing
         lidict = lineinfodict(unique(data))
     end
+    data_u64 = convert(Vector{UInt64}, data)
     root = combine ? StackFrameTree{StackFrame}() : StackFrameTree{UInt64}()
     # Build the tree with C=true, regardless of user setting. This is because
     # we need the C frames to set the status flag. They will be omitted by `flamegraph!`
     # as needed.
     if VERSION >= v"1.4.0-DEV.128"
-        root = Profile.tree!(root, data, lidict, #= C =# true, recur)
+        root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
     else
-        root = Profile.tree!(root, data, lidict, #= C =# true)
+        root = Profile.tree!(root, data_u64, lidict, #= C =# true)
     end
     if isempty(root.down)
         Profile.warning_empty()

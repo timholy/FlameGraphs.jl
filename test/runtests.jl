@@ -5,6 +5,7 @@ using Test, Profile
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
 
+Profile.init(n=10000) # prevent stack overflow
 
 @testset "flamegraph" begin
     backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
@@ -406,18 +407,18 @@ end
 end
 
 @testset "Profiling" begin
-     A = randn(100, 100, 200)
-     Profile.clear()
-     @profile mapslices(sum, A; dims=2)
-     g = flamegraph()
-     @test FlameGraphs.depth(g) > 10
-     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
-     @test any(img .== colorant"orange")
-     A = [1,2,3]
-     sum(A)
-     Profile.clear()
-     @profile sum(A)
-     Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
+    A = randn(100, 100, 200)
+    Profile.clear()
+    @profile mapslices(sum, A; dims=2)
+    g = flamegraph()
+    @test FlameGraphs.depth(g) > 10
+    img = flamepixels(StackFrameCategory(), flamegraph(C=true))
+    @test any(img .== colorant"orange")
+    A = [1,2,3]
+    sum(A)
+    Profile.clear()
+    @profile sum(A)
+    Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
 end
 
 @testset "IO" begin
