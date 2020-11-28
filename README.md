@@ -13,6 +13,7 @@ You might use FlameGraphs on its own, but users should consider one of its downs
 - [Juno](https://junolab.org/), a development environment that supports profile visualization
 - [ProfileVega](https://github.com/davidanthoff/ProfileVega.jl), the recommended package for display in Jupyter notebooks
 - [ProfileSVG](https://github.com/timholy/ProfileSVG.jl), a package for writing flame graphs to SVG format
+- [PProf](https://github.com/JuliaPerf/PProf.jl), an interactive, web-based profile GUI explorer, implemented as a wrapper around [`google/pprof`](https://github.com/google/pprof).
 
 See the documentation for details.
 
