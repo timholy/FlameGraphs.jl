@@ -16,6 +16,18 @@ These files conventionally have the extension ".jlprof".
 If you just supply a string filename ending with this extension,
 you must pass `data` and `lidict` explicitly, because
 FileIO has its own interpretation of the meaning of `save` with no arguments.
+
+# Example
+
+For this to work, you need to `pkg> add FileIO FlameGraphs`.
+
+```julia
+julia> using Profile, FileIO    # you don't even need to explicitly use `FlameGraphs`
+
+julia> @profile mapslices(sum, rand(3,3,3,3), dims=[1,2]);
+
+julia> save("/tmp/myprof.jlprof", Profile.retrieve()...)
+```
 """
 function save(f::File{format"JLPROF"}, data::AbstractVector{<:Unsigned}, lidict::Profile.LineInfoDict)
     data_u64 = convert(AbstractVector{UInt64}, data)
