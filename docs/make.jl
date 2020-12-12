@@ -17,4 +17,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/timholy/FlameGraphs.jl",
+    push_preview=true,
 )
