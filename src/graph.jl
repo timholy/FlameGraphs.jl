@@ -92,7 +92,7 @@ You can control the strategy with the following keywords:
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.
 """
-function flamegraph(data=Profile.fetch(); lidict=nothing, C::Bool=false, combine::Bool=true,
+function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.StackTraces.StackFrame}},Dict{UInt64,Base.StackTraces.StackFrame},Nothing}=nothing, C::Bool=false, combine::Bool=true,
         recur::Symbol=:off, norepl::Bool=true, pruned=defaultpruned, filter=nothing)
     if lidict === nothing
         lidict = lineinfodict(unique(data))
