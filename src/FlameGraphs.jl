@@ -11,9 +11,10 @@ using AbstractTrees
 AbstractTrees.children(node::StackFrameTree) = node.down
 AbstractTrees.printnode(io::IO, node::StackFrameTree) = print(io, node.frame)
 
-export flamegraph, flamepixels, flametags, FlameColors, StackFrameCategory
+export flamegraph, flamepixels, flametags, diffflamegraph, FlameColors, StackFrameCategory
 
 include("graph.jl")
+include("diffgraph.jl")
 include("render.jl")
 include("sfcategory.jl")
 include("io.jl")
