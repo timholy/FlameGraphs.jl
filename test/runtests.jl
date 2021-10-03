@@ -5,14 +5,15 @@ using Test, Profile
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
 
-Profile.init(n=10000) # prevent stack overflow
-
 @testset "flamegraph" begin
-    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+    backtraces = UInt64[   4, 3, 2, 1,   # order: callees then caller
                         0, 6, 5, 1,
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    if isdefined(Profile, :add_fake_meta)
+        backtraces = Profile.add_fake_meta(backtraces)
+    end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -155,11 +156,14 @@ FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
 end
 
 @testset "flamegraph string filtering" begin
-    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+    backtraces = UInt64[   4, 3, 2, 1,   # order: callees then caller
                         0, 6, 5, 1,
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    if isdefined(Profile, :add_fake_meta)
+        backtraces = Profile.add_fake_meta(backtraces)
+    end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -197,12 +201,14 @@ end
 end
 
 @testset "flamegraph function filtering" begin
-    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+    backtraces = UInt64[   4, 3, 2, 1,   # order: callees then caller
                         0, 6, 5, 1,
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
-
+    if isdefined(Profile, :add_fake_meta)
+        backtraces = Profile.add_fake_meta(backtraces)
+    end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -253,11 +259,14 @@ end
 end
 
 @testset "flamegraph wrong filtering is ignored" begin
-    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+    backtraces = UInt64[   4, 3, 2, 1,   # order: callees then caller
                         0, 6, 5, 1,
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    if isdefined(Profile, :add_fake_meta)
+        backtraces = Profile.add_fake_meta(backtraces)
+    end
 
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
@@ -318,11 +327,14 @@ end
 end
 
 @testset "flamepixels" begin
-    backtraces = UInt64[0, 4, 3, 2, 1,   # order: calles then caller
+    backtraces = UInt64[   4, 3, 2, 1,   # order: callees then caller
                         0, 6, 5, 1,
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    if isdefined(Profile, :add_fake_meta)
+        backtraces = Profile.add_fake_meta(backtraces)
+    end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
                                      3=>stackframe(:f3, :file2, 1),
@@ -409,6 +421,7 @@ end
 @testset "Profiling" begin
     A = randn(100, 100, 200)
     Profile.clear()
+    mapslices(sum, A; dims=2)  # compile it so we don't end up profiling inference
     @profile mapslices(sum, A; dims=2)
     g = flamegraph()
     @test FlameGraphs.depth(g) > 10
