@@ -102,7 +102,9 @@ function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.
     # Build the tree with C=true, regardless of user setting. This is because
     # we need the C frames to set the status flag. They will be omitted by `flamegraph!`
     # as needed.
-    if VERSION >= v"1.4.0-DEV.128"
+    if VERSION >= v"1.8.0-DEV.460"
+        root, _ = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
+    elseif VERSION >= v"1.4.0-DEV.128"
         root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
     else
         root = Profile.tree!(root, data_u64, lidict, #= C =# true)
