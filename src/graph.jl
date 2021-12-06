@@ -139,7 +139,7 @@ end
 
 function status(sf::StackFrame)
     st = UInt8(0)
-    if sf.from_c && (sf.func === :jl_invoke || sf.func === :jl_apply_generic)
+    if sf.from_c && (sf.func === :jl_invoke || sf.func === :jl_apply_generic || sf.func === :ijl_apply_generic)
         st |= runtime_dispatch
     end
     if sf.from_c && startswith(String(sf.func), "jl_gc_")
