@@ -468,7 +468,7 @@ end
     Profile.clear()
     @profile mapslices(sum, A; dims=2)
     fn = tempname()*".jlprof"
-    f = File(format"JLPROF", fn)
+    f = File{format"JLPROF"}(fn)
     FlameGraphs.save(f)
     data, lidict = FlameGraphs.load(f)
     datar, lidictr = Profile.retrieve()
