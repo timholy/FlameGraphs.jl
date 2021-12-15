@@ -464,6 +464,29 @@ end
 end
 
 @testset "IO" begin
+    function nodeeq(a::FlameGraphs.Node, b::FlameGraphs.Node)
+        nodeeq(a.data, b.data) || return false
+        reta, retb = iterate(a), iterate(b)
+        while true
+            reta === retb === nothing && return true
+            (reta === nothing) || (retb === nothing) && return false
+            childa, statea = reta
+            childb, stateb = retb
+            nodeeq(childa, childb) || return false
+            reta, retb = iterate(a, statea), iterate(b, stateb)
+        end
+    end
+    nodeeq(a::FlameGraphs.NodeData, b::FlameGraphs.NodeData) =
+        nodeeq(a.sf, b.sf) &&
+        a.status == b.status &&
+        a.span == b.span
+    nodeeq(a::Base.StackFrame, b::Base.StackFrame) =
+        a.func == b.func &&
+        a.file == b.file &&
+        a.line == b.line &&
+        a.from_c == b.from_c &&
+        a.inlined == b.inlined
+
     A = randn(100, 100, 200)
     Profile.clear()
     @profile mapslices(sum, A; dims=2)
@@ -474,4 +497,12 @@ end
     datar, lidictr = Profile.retrieve()
     @test data == datar
     @test lidictr == lidict
+    rm(fn)
+    fn = tempname()*".jlprof"
+    f = File{format"JLPROF"}(fn)
+    g = flamegraph(data; lidict=lidict)
+    FlameGraphs.save(f, g)
+    gr = FlameGraphs.load(f)
+    @test nodeeq(g, gr)
+    rm(fn)
 end
