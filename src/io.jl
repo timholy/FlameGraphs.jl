@@ -44,14 +44,45 @@ function save(f::File{format"JLPROF"}, data::AbstractVector{<:Unsigned}, lidict:
             write(io, k)
             write(io, Int32(length(v)))
             for sf in v
-                symwrite(io, sf.func)
-                symwrite(io, sf.file)
-                write(io, sf.line)
-                write(io, sf.from_c)
-                write(io, sf.inlined)
+                sfwrite(io, sf)
             end
         end
     end
+    return nothing
+end
+
+function save(f::File{format"JLPROF"}, g::Node{NodeData})
+    queue = Union{Nothing,typeof(g)}[]
+    open(f, "w") do io
+        write(io, magic(format"JLPROF"))
+        # Write an endianness revealer
+        write(io, 0x01020304)
+        # Write an indicator that this is node format
+        write(io, 0x02)
+        push!(queue, g)
+        savedfs!(io, queue)
+    end
+    return nothing
+end
+
+function savedfs!(io, queue)
+    isempty(queue) && return nothing
+    node = pop!(queue)
+    if node === nothing
+        write(io, 0x00)    # leaf-terminator
+    else
+        write(io, 0xff)   # node
+        data = node.data
+        sfwrite(io, data.sf)
+        write(io, data.status)
+        write(io, data.span.start)
+        write(io, data.span.stop)
+        push!(queue, nothing)
+        for child in reverse(collect(node))
+            push!(queue, child)
+        end
+    end
+    savedfs!(io, queue)
     return nothing
 end
 
@@ -61,8 +92,10 @@ save(f::File{format"JLPROF"}) = save(f, Profile.retrieve()...)
 """
     data, lidict = load(f::FileIO.File)
     data, lidict = load(filename::AbstractString)
+    g = load(...)
 
 Load profiling data. You can reconstruct the flame graph from `flamegraph(data; lidict=lidict)`.
+Some files may already store the data in graph format, and return a single argument `g`.
 """
 function load(f::File{format"JLPROF"})
     open(f) do io
@@ -98,13 +131,58 @@ function load(io::Stream{format"JLPROF"})
         end
         return data, lidict
     end
+    if fmt == 0x02
+        tag = read(io, UInt8)
+        tag == 0xff || error("first entry must be a node")
+        sf = sfread(io)
+        status = read(io, UInt8)
+        start, stop = read(io, Int), read(io, Int)
+        span = start:stop
+        root = Node(NodeData(sf, status, span))
+        loadbfs!(io, root)
+        return root
+    end
     error("format ", fmt, " not recognized")
+end
+
+function loadbfs!(io, parent)
+    eof(io) && return nothing
+    tag = read(io, UInt8)
+    tag == 0x00 && return loadbfs!(io, parent.parent)
+    tag == 0xff || error("expected leaf-terminator or node, got $tag")
+    sf = sfread(io)
+    status = read(io, UInt8)
+    start, stop = read(io, Int), read(io, Int)
+    span = start:stop
+    child_data = NodeData(sf, status, span)
+    child = addchild(parent, child_data)
+    loadbfs!(io, child)
+    return nothing
+end
+
+function sfwrite(io, sf::StackFrame)
+    symwrite(io, sf.func)
+    symwrite(io, sf.file)
+    write(io, sf.line)
+    write(io, sf.from_c)
+    write(io, sf.inlined)
+    return nothing
+end
+
+function sfread(io)
+    func    = symread(io)
+    file    = symread(io)
+    line    = read(io, Int)
+    from_c  = read(io, Bool)
+    inlined = read(io, Bool)
+    return StackFrame(func, file, line, nothing, from_c, inlined, 0x0)
 end
 
 function symwrite(io, sym::Symbol)
     str = string(sym)
     write(io, Int32(ncodeunits(str)))
     write(io, str)
+    return nothing
 end
 
 function symread(io)

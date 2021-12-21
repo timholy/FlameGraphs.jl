@@ -1,6 +1,6 @@
 using FlameGraphs, AbstractTrees, Colors, FileIO
 using Base.StackTraces: StackFrame
-using Test, Profile
+using Test, Profile, InteractiveUtils
 
 # useful for testing
 stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), line, nothing, C, false, 0)
@@ -434,15 +434,75 @@ end
     Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
 end
 
+@testset "Runtime dipatch detection" begin
+    # Test is from SnoopCompile
+    mappushes!(f, dest, src) = (for item in src push!(dest, f(item)) end; return dest)
+    function spell_spec(::Type{T}) where T
+        name = Base.unwrap_unionall(T).name.name
+        str = ""
+        for c in string(name)
+            str *= c
+        end
+        return str
+    end
+    Ts = subtypes(Any)[1:20]   # we don't need all of them
+    mappushes!(spell_spec, [], Ts)
+    @profile for i = 1:1000
+        mappushes!(spell_spec, [], Ts)
+    end
+    _, sfdict = Profile.retrieve()
+    rtds = []
+    for sfs in values(sfdict)
+        for sf in sfs
+            if (FlameGraphs.status(sf) & FlameGraphs.runtime_dispatch) != 0
+                push!(rtds, sfs)
+                break
+            end
+        end
+    end
+    @test !isempty(rtds)
+end
+
 @testset "IO" begin
+    function nodeeq(a::FlameGraphs.Node, b::FlameGraphs.Node)
+        nodeeq(a.data, b.data) || return false
+        reta, retb = iterate(a), iterate(b)
+        while true
+            reta === retb === nothing && return true
+            (reta === nothing) || (retb === nothing) && return false
+            childa, statea = reta
+            childb, stateb = retb
+            nodeeq(childa, childb) || return false
+            reta, retb = iterate(a, statea), iterate(b, stateb)
+        end
+    end
+    nodeeq(a::FlameGraphs.NodeData, b::FlameGraphs.NodeData) =
+        nodeeq(a.sf, b.sf) &&
+        a.status == b.status &&
+        a.span == b.span
+    nodeeq(a::Base.StackFrame, b::Base.StackFrame) =
+        a.func == b.func &&
+        a.file == b.file &&
+        a.line == b.line &&
+        a.from_c == b.from_c &&
+        a.inlined == b.inlined
+
     A = randn(100, 100, 200)
     Profile.clear()
     @profile mapslices(sum, A; dims=2)
     fn = tempname()*".jlprof"
-    f = File(format"JLPROF", fn)
+    f = File{format"JLPROF"}(fn)
     FlameGraphs.save(f)
     data, lidict = FlameGraphs.load(f)
     datar, lidictr = Profile.retrieve()
     @test data == datar
     @test lidictr == lidict
+    rm(fn)
+    fn = tempname()*".jlprof"
+    f = File{format"JLPROF"}(fn)
+    g = flamegraph(data; lidict=lidict)
+    FlameGraphs.save(f, g)
+    gr = FlameGraphs.load(f)
+    @test nodeeq(g, gr)
+    rm(fn)
 end
