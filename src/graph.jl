@@ -88,10 +88,8 @@ You can control the strategy with the following keywords:
   or any function, that can be applied to `NodeData`. For example, `filter = "mapslices"` or equivalently
   `filter = x -> (x.sf.func == :mapslices)` removes all branches that do not contain `mapslices` Node as a child
   or ancestor.
-- `threads::Union{Int,AbstractVector{Int}}` -- Specify which threads to include snapshots from in the report. Note that
-  this does not control which threads samples are collected on.
-- `tasks::Union{Int,AbstractVector{Int}}` -- Specify which tasks to include snapshots from in the report. Note that this
-  does not control which tasks samples are collected within.
+- `threads::Union{Int,AbstractVector{Int},Nothing}`: specify which threads to include samples from. `nothing` returns all.
+- `tasks::Union{Int,AbstractVector{Int},Nothing}`: specify which tasks to include samples from. `nothing` returns all.
 
 !!! compat 1.8
     The `threads` and `tasks` kwargs require julia 1.8
