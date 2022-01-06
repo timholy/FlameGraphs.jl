@@ -11,8 +11,9 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    dummy_task = UInt(0xf0f0f0f0)
     if isdefined(Profile, :add_fake_meta)
-        backtraces = Profile.add_fake_meta(backtraces)
+        backtraces = Profile.add_fake_meta(backtraces, taskid = dummy_task)
     end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
@@ -22,8 +23,8 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                                      6=>stackframe(:f5, :file3, 1),
                                      7=>stackframe(:f1, :file1, 2),
                                      8=>stackframe(:f6, :file3, 10))
-    @testset "Threads: $threads" for threads in [nothing, 1]
-        g = flamegraph(backtraces; lidict=lidict, threads=threads)
+    @testset "Threads: $threads, Tasks: $tasks" for threads in [nothing, 1], tasks in [nothing, dummy_task]
+        g = flamegraph(backtraces; lidict=lidict, threads=threads, tasks=tasks)
         @test all(node->node.data.status == 0, PostOrderDFS(g))
         level1 = collect(g)
         @test length(level1) == 2
