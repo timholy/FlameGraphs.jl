@@ -11,8 +11,8 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
-    dummy_task = UInt(0xf0f0f0f0)
     dummy_thread = 1
+    dummy_task = UInt(0xf0f0f0f0)
     if isdefined(Profile, :add_fake_meta)
         backtraces = Profile.add_fake_meta(backtraces, threadid = dummy_thread, taskid = dummy_task)
     end
@@ -24,7 +24,7 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                                      6=>stackframe(:f5, :file3, 1),
                                      7=>stackframe(:f1, :file1, 2),
                                      8=>stackframe(:f6, :file3, 10))
-    for threads in [nothing, 1], tasks in [nothing, dummy_task]
+    for threads in [nothing, dummy_thread], tasks in [nothing, dummy_task]
         VERSION < v"1.8.0-DEV.460" && threads !== nothing && tasks !== nothing && continue # skip if threads not available
         @testset "Threads: $(repr(threads)), Tasks: $(repr(tasks))" begin
             g = if VERSION >= v"1.8.0-DEV.460"
