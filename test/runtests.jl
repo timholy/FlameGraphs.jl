@@ -25,7 +25,7 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                                      7=>stackframe(:f1, :file1, 2),
                                      8=>stackframe(:f6, :file3, 10))
     for threads in [nothing, 1], tasks in [nothing, dummy_task]
-        VERSION < v"1.8.0-DEV.460" && !isnothing(threads) && !isnothing(tasks) && continue # skip if threads not available
+        VERSION < v"1.8.0-DEV.460" && threads !== nothing && tasks !== nothing && continue # skip if threads not available
         @testset "Threads: $threads, Tasks: $tasks" begin
             g = if VERSION >= v"1.8.0-DEV.460"
                 flamegraph(backtraces; lidict=lidict, threads=threads, tasks=tasks)
