@@ -27,6 +27,8 @@ end
 const runtime_dispatch = UInt8(1)
 const gc_event         = UInt8(2)
 const repl             = UInt8(4)
+const compilation      = UInt8(8)
+const task_event       = UInt8(16)
 
 const defaultpruned = Tuple{Symbol,Symbol}[]
 
@@ -147,6 +149,12 @@ function status(sf::StackFrame)
     end
     if !sf.from_c && sf.func === :eval_user_input && endswith(String(sf.file), "REPL.jl")
         st |= repl
+    end
+    if !sf.from_c && occursin("./compiler/", String(sf.file))
+        st |= compilation
+    end
+    if !sf.from_c && occursin("task.jl", String(sf.file))
+        st |= task_event
     end
     return st
 end

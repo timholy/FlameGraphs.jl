@@ -4,12 +4,15 @@ struct FlameColors
     colorfont::RGB{N0f8}
     colorsrt::Vector{RGB{N0f8}}
     colorsgc::Vector{RGB{N0f8}}
+    colorscomp::Vector{RGB{N0f8}}
+    colorstask::Vector{RGB{N0f8}}
 end
 
 """
     fcolor = FlameColors(n::Integer=2;
                          colorbg=colorant"white", colorfont=colorant"black",
-                         colorsrt=colorant"crimson", colorsgc=colorant"orange")
+                         colorsrt=colorant"crimson", colorsgc=colorant"orange",
+                         colorscomp=colorant"blue", colorstask=colorant"light_gray")
 
 Choose a set of colors for rendering a flame graph. There are several special colors:
 
@@ -17,6 +20,8 @@ Choose a set of colors for rendering a flame graph. There are several special co
 - `colorfont` is used when annotating stackframes with text
 - `colorsrt` highlights [runtime dispatch](https://discourse.julialang.org/t/dynamic-dispatch/6963), typically a costly process
 - `colorsgc` highlights garbage-collection events
+- `colorscomp` highlights compilation events
+- `colorstask` (de)highlights task events which are indicative of sleeping/waiting
 
 `n` specifies the number of "other" colors to choose when one of the above is not relevant.
 `FlameColors` chooses `2n` colors: the first `n` colors for odd depths in the stacktrace and
@@ -24,9 +29,9 @@ the last `n` colors for even depths in the stacktrace. Consequently, different s
 be distinguishable from one another by color.
 
 The highlighting can be disabled by passing `nothing` or a zero-element vector
-for `colorsrt` or `colorsgc`. When a single color is passed for `colorsrt` or
-`colorsgc`, this method generates four variant colors slightly different from
-the specified color. `colorsrt` or `colorsgc` can also be specified as multiple
+for `colorsrt`, `colorsgc`, `colorscomp`, or `colorstask`. When a single color is
+passed for these args, this method generates four variant colors slightly different from
+the specified color. They can also be specified as multiple
 colors with a vector. The first half of the vector is for odd depths and the
 second half is for even depths. By using a one-element vector instead of a
 single color, the specified color is always used.
@@ -36,7 +41,8 @@ While the return value is a `struct`, it is callable and can be used as the
 """
 function FlameColors(n::Integer=2;
                      colorbg=colorant"white", colorfont=colorant"black",
-                     colorsrt=colorant"crimson", colorsgc=colorant"orange")
+                     colorsrt=colorant"crimson", colorsgc=colorant"orange",
+                     colorscomp=colorant"blue", colorstask=colorant"lightgray")
     seeds = [colorbg, colorfont]
     function make_variations(color)
         color === nothing && return RGB{N0f8}[]
@@ -48,8 +54,12 @@ function FlameColors(n::Integer=2;
     end
     colorsrt = make_variations(colorsrt)
     colorsgc = make_variations(colorsgc)
+    colorscomp = make_variations(colorscomp)
+    colorstask = make_variations(colorstask)
     append!(seeds, colorsrt)
     append!(seeds, colorsgc)
+    append!(seeds, colorscomp)
+    append!(seeds, colorstask)
     nseeds = length(seeds)
     colors = distinguishable_colors(2n+nseeds, seeds,
                                     transform=c->deuteranopic(c, 0.95),
@@ -57,7 +67,7 @@ function FlameColors(n::Integer=2;
                                     cchoices=Float64[10, 55],
                                     hchoices=range(10, stop=350, length=18))[nseeds+1:end]
     sort!(colors, by=c->colordiff(c, colorbg))
-    return FlameGraphs.FlameColors(colors, colorbg, colorfont, colorsrt, colorsgc)
+    return FlameGraphs.FlameColors(colors, colorbg, colorfont, colorsrt, colorsgc, colorscomp, colorstask)
 end
 
 const default_colors = FlameColors()
@@ -75,6 +85,10 @@ function (colors::FlameColors)(nextidx, j::Integer, data)
         colorvec = colors.colorsrt
     elseif length(colors.colorsgc) > 0 && (data.status & gc_event) != 0
         colorvec = colors.colorsgc
+    elseif length(colors.colorscomp) > 0 && (data.status & compilation) != 0
+        colorvec = colors.colorscomp
+    elseif length(colors.colorstask) > 0 && (data.status & task_event) != 0
+        colorvec = colors.colorstask
     else
         colorvec = colors.colors
     end
