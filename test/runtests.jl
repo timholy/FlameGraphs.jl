@@ -11,8 +11,10 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                         0, 8, 7,
                         0, 4, 3, 2, 1,
                         0]
+    dummy_thread = 1
+    dummy_task = UInt(0xf0f0f0f0)
     if isdefined(Profile, :add_fake_meta)
-        backtraces = Profile.add_fake_meta(backtraces)
+        backtraces = Profile.add_fake_meta(backtraces, threadid = dummy_thread, taskid = dummy_task)
     end
     lidict = Dict{UInt64,StackFrame}(1=>stackframe(:f1, :file1, 1),
                                      2=>stackframe(:f2, :file1, 5),
@@ -22,58 +24,65 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                                      6=>stackframe(:f5, :file3, 1),
                                      7=>stackframe(:f1, :file1, 2),
                                      8=>stackframe(:f6, :file3, 10))
-    g = flamegraph(backtraces; lidict=lidict)
-    @test all(node->node.data.status == 0, PostOrderDFS(g))
-    level1 = collect(g)
-    @test length(level1) == 2
-    n1, n2 = level1
-    @test n1.data.sf.func === :f1
-    @test n1.data.sf.line == 1
-    @test n1.data.span == 1:3
-    @test n2.data.sf.func === :f1
-    @test n2.data.sf.line == 2
-    @test n2.data.span == 4:4
-    level2a = collect(n1)
-    @test length(level2a) == 2
-    n3, n4 = level2a
-    @test n3.data.sf.func === :f2
-    @test n3.data.sf.line == 5
-    @test n3.data.span == 1:2
-    @test n4.data.sf.func === :f4
-    @test n4.data.sf.line == 20
-    @test n4.data.span == 3:3
-    level2b = collect(n2)
-    @test length(level2b) == 1
-    n5 = level2b[1]
-    @test n5.data.sf.func === :f6
-    @test n5.data.sf.line == 10
-    @test n5.data.span == 4:4
-    level3a = collect(n3)
-    @test length(level3a) == 1
-    n6 = level3a[1]
-    @test n6.data.sf.func === :f3
-    @test n6.data.sf.line == 1
-    @test n6.data.span == 1:2
-    level3b = collect(n4)
-    @test length(level3b) == 1
-    n7 = level3b[1]
-    @test n7.data.sf.func === :f5
-    @test n7.data.sf.line == 1
-    @test n7.data.span == 3:3
-    @test isempty(n5)
-    level4a = collect(n6)
-    @test length(level4a) == 1
-    n8 = level4a[1]
-    @test n8.data.sf.func === :f2
-    @test n8.data.sf.line == 15
-    @test n8.data.span == 1:2
-    @test isempty(n7)
-    @test isempty(n8)
+    for threads in [nothing, dummy_thread], tasks in [nothing, dummy_task]
+        VERSION < v"1.8.0-DEV.460" && threads !== nothing && tasks !== nothing && continue # skip if threads not available
+        @testset "Threads: $(repr(threads)), Tasks: $(repr(tasks))" begin
+            g = if VERSION >= v"1.8.0-DEV.460"
+                flamegraph(backtraces; lidict=lidict, threads=threads, tasks=tasks)
+            else
+                flamegraph(backtraces; lidict=lidict)
+            end
+            @test all(node->node.data.status == 0, PostOrderDFS(g))
+            level1 = collect(g)
+            @test length(level1) == 2
+            n1, n2 = level1
+            @test n1.data.sf.func === :f1
+            @test n1.data.sf.line == 1
+            @test n1.data.span == 1:3
+            @test n2.data.sf.func === :f1
+            @test n2.data.sf.line == 2
+            @test n2.data.span == 4:4
+            level2a = collect(n1)
+            @test length(level2a) == 2
+            n3, n4 = level2a
+            @test n3.data.sf.func === :f2
+            @test n3.data.sf.line == 5
+            @test n3.data.span == 1:2
+            @test n4.data.sf.func === :f4
+            @test n4.data.sf.line == 20
+            @test n4.data.span == 3:3
+            level2b = collect(n2)
+            @test length(level2b) == 1
+            n5 = level2b[1]
+            @test n5.data.sf.func === :f6
+            @test n5.data.sf.line == 10
+            @test n5.data.span == 4:4
+            level3a = collect(n3)
+            @test length(level3a) == 1
+            n6 = level3a[1]
+            @test n6.data.sf.func === :f3
+            @test n6.data.sf.line == 1
+            @test n6.data.span == 1:2
+            level3b = collect(n4)
+            @test length(level3b) == 1
+            n7 = level3b[1]
+            @test n7.data.sf.func === :f5
+            @test n7.data.sf.line == 1
+            @test n7.data.span == 3:3
+            @test isempty(n5)
+            level4a = collect(n6)
+            @test length(level4a) == 1
+            n8 = level4a[1]
+            @test n8.data.sf.func === :f2
+            @test n8.data.sf.line == 15
+            @test n8.data.span == 1:2
+            @test isempty(n7)
+            @test isempty(n8)
 
-    io = IOBuffer()
-    print_tree(io, g)
-    str = String(take!(io))
-    @test str == """
+            io = IOBuffer()
+            print_tree(io, g)
+            str = String(take!(io))
+            @test str == """
 FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
 ├─ FlameGraphs.NodeData(f1 at file1:1, 0x00, 1:3)
 │  ├─ FlameGraphs.NodeData(f2 at file1:5, 0x00, 1:2)
@@ -84,6 +93,8 @@ FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
 └─ FlameGraphs.NodeData(f1 at file1:2, 0x00, 4:4)
    └─ FlameGraphs.NodeData(f6 at file3:10, 0x00, 4:4)
 """
+        end
+    end
 
     # pruning
     c = g.child.child

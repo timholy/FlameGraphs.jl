@@ -88,12 +88,19 @@ You can control the strategy with the following keywords:
   or any function, that can be applied to `NodeData`. For example, `filter = "mapslices"` or equivalently
   `filter = x -> (x.sf.func == :mapslices)` removes all branches that do not contain `mapslices` Node as a child
   or ancestor.
+- `threads::Union{Int,AbstractVector{Int},Nothing}`: specify which threads to include samples from. `nothing` returns all.
+- `tasks::Union{Int,AbstractVector{Int},Nothing}`: specify which tasks to include samples from. `nothing` returns all.
+
+!!! compat 1.8
+    The `threads` and `tasks` kwargs require julia 1.8
 
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.
 """
 function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.StackTraces.StackFrame}},Dict{UInt64,Base.StackTraces.StackFrame},Nothing}=nothing, C::Bool=false, combine::Bool=true,
-        recur::Symbol=:off, norepl::Bool=true, pruned=defaultpruned, filter=nothing)
+        recur::Symbol=:off, norepl::Bool=true, pruned=defaultpruned, filter=nothing,
+        threads::Union{Int,AbstractVector{Int},Nothing} = nothing,
+        tasks::Union{UInt,AbstractVector{UInt},Nothing} = nothing)
     if lidict === nothing
         lidict = lineinfodict(unique(data))
     end
@@ -103,11 +110,17 @@ function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.
     # we need the C frames to set the status flag. They will be omitted by `flamegraph!`
     # as needed.
     if VERSION >= v"1.8.0-DEV.460"
-        root, _ = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
-    elseif VERSION >= v"1.4.0-DEV.128"
-        root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
+        threads = something(threads, 1:Threads.nthreads())
+        tasks = something(tasks, typemin(UInt):typemax(UInt))
+        root, _ = Profile.tree!(root, data_u64, lidict, #= C =# true, recur, threads, tasks)
     else
-        root = Profile.tree!(root, data_u64, lidict, #= C =# true)
+        threads === nothing || error("Specifying `threads` is not supported before julia 1.8")
+        tasks === nothing || error("Specifying `tasks` is not supported before julia 1.8")
+        if VERSION >= v"1.4.0-DEV.128"
+            root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
+        else
+            root = Profile.tree!(root, data_u64, lidict, #= C =# true)
+        end
     end
     if isempty(root.down)
         Profile.warning_empty()
