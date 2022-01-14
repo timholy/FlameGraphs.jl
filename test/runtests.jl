@@ -403,7 +403,7 @@ end
     fc2 = FlameColors(
         parse.(RGB, ["#E870DD", "#32B44E", "#1AA2FF", "#00DEE6", "#FFA49C",
                      "#9E9E9E", "#A8A200", "#CDB9FF", "#00E5B2", "#FF5F82"]),
-        colorant"white", colorant"black", [colorant"red"], [colorant"orange"])
+        colorant"white", colorant"black", [colorant"red"], [colorant"orange"], [colorant"blue"], [colorant"lightgray"])
     img = flamepixels(fc2, g)
     @test all(img[:,1] .== fc2.colors[1])
     @test all(img[1:3,2] .== fc2.colorsrt[1])
