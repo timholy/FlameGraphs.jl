@@ -36,7 +36,8 @@ While the return value is a `struct`, it is callable and can be used as the
 """
 function FlameColors(n::Integer=2;
                      colorbg=colorant"white", colorfont=colorant"black",
-                     colorsrt=colorant"crimson", colorsgc=colorant"orange")
+                     colorsrt=colorant"crimson", colorsgc=colorant"orange",
+                     darkmode=false)
     seeds = [colorbg, colorfont]
     function make_variations(color)
         color === nothing && return RGB{N0f8}[]
@@ -50,13 +51,14 @@ function FlameColors(n::Integer=2;
     colorsgc = make_variations(colorsgc)
     append!(seeds, colorsrt)
     append!(seeds, colorsgc)
+    darkmode && append!(seeds, make_variations(RGB(0.9,0.9,0.9))) # bias away from white
     nseeds = length(seeds)
     colors = distinguishable_colors(2n+nseeds, seeds,
                                     transform=c->deuteranopic(c, 0.95),
                                     lchoices=Float64[65, 80],
                                     cchoices=Float64[10, 55],
                                     hchoices=range(10, stop=350, length=18))[nseeds+1:end]
-    sort!(colors, by=c->colordiff(c, colorbg))
+    sort!(colors, by=c->colordiff(c, darkmode ? colorfont : colorbg))
     return FlameGraphs.FlameColors(colors, colorbg, colorfont, colorsrt, colorsgc)
 end
 
