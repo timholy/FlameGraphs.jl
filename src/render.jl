@@ -63,6 +63,7 @@ function FlameColors(n::Integer=2;
 end
 
 const default_colors = FlameColors()
+const default_colors_dark = FlameColors(; colorbg=RGB(0.09,0.09,0.09), colorfont=colorant"white", darkmode = true)
 
 function (colors::FlameColors)(s::Symbol)
     s === :bg && return colors.colorbg
