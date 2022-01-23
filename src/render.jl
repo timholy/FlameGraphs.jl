@@ -34,10 +34,10 @@ single color, the specified color is always used.
 While the return value is a `struct`, it is callable and can be used as the
 `fcolor` input for `flamepixels`.
 """
-function FlameColors(n::Integer=2;
-                     colorbg=colorant"white", colorfont=colorant"black",
-                     colorsrt=colorant"crimson", colorsgc=colorant"orange",
-                     darkmode=false)
+function FlameColors(n::Integer=2; darkmode = false,
+                     colorbg=(darkmode ? RGB(0.09,0.09,0.09) : colorant"white"),
+                     colorfont=(darkmode ? colorant"white" : colorant"black"),
+                     colorsrt=colorant"crimson", colorsgc=colorant"orange")
     seeds = [colorbg, colorfont]
     function make_variations(color)
         color === nothing && return RGB{N0f8}[]
@@ -63,7 +63,7 @@ function FlameColors(n::Integer=2;
 end
 
 const default_colors = FlameColors()
-const default_colors_dark = FlameColors(; colorbg=RGB(0.09,0.09,0.09), colorfont=colorant"white", darkmode = true)
+const default_colors_dark = FlameColors(; darkmode = true)
 
 function (colors::FlameColors)(s::Symbol)
     s === :bg && return colors.colorbg
