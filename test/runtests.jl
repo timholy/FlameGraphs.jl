@@ -415,7 +415,7 @@ end
     @test all(img[2:4,4] .== fc2.colorbg)
 
     # dark mode
-    fc3 = FlameColors(;colorbg=RGB(0.09,0.09,0.09), colorfont=colorant"white", darkmode = true)
+    fc3 = FlameColors(; darkmode = true)
 
     sfc = StackFrameCategory()
     @test sfc(:bg) == sfc.colorbg
