@@ -34,8 +34,9 @@ single color, the specified color is always used.
 While the return value is a `struct`, it is callable and can be used as the
 `fcolor` input for `flamepixels`.
 """
-function FlameColors(n::Integer=2;
-                     colorbg=colorant"white", colorfont=colorant"black",
+function FlameColors(n::Integer=2; darkmode = false,
+                     colorbg=(darkmode ? RGB(0.09,0.09,0.09) : colorant"white"),
+                     colorfont=(darkmode ? colorant"white" : colorant"black"),
                      colorsrt=colorant"crimson", colorsgc=colorant"orange")
     seeds = [colorbg, colorfont]
     function make_variations(color)
@@ -50,17 +51,19 @@ function FlameColors(n::Integer=2;
     colorsgc = make_variations(colorsgc)
     append!(seeds, colorsrt)
     append!(seeds, colorsgc)
+    darkmode && append!(seeds, make_variations(RGB(0.9,0.9,0.9))) # bias away from white
     nseeds = length(seeds)
     colors = distinguishable_colors(2n+nseeds, seeds,
                                     transform=c->deuteranopic(c, 0.95),
                                     lchoices=Float64[65, 80],
                                     cchoices=Float64[10, 55],
                                     hchoices=range(10, stop=350, length=18))[nseeds+1:end]
-    sort!(colors, by=c->colordiff(c, colorbg))
+    sort!(colors, by=c->colordiff(c, darkmode ? colorfont : colorbg))
     return FlameGraphs.FlameColors(colors, colorbg, colorfont, colorsrt, colorsgc)
 end
 
 const default_colors = FlameColors()
+const default_colors_dark = FlameColors(; darkmode = true)
 
 function (colors::FlameColors)(s::Symbol)
     s === :bg && return colors.colorbg

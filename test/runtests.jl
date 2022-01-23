@@ -414,6 +414,9 @@ end
     @test img[1,4] == fc2.colors[6]
     @test all(img[2:4,4] .== fc2.colorbg)
 
+    # dark mode
+    fc3 = FlameColors(; darkmode = true)
+
     sfc = StackFrameCategory()
     @test sfc(:bg) == sfc.colorbg
     @test_throws ArgumentError sfc(:unknown)
