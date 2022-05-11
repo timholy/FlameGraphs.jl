@@ -14,6 +14,7 @@ You might use FlameGraphs on its own, but users should consider one of its downs
 - [Juno](https://junolab.org/), a development environment that supports profile visualization
 - [ProfileVega](https://github.com/davidanthoff/ProfileVega.jl), the recommended package for display in Jupyter notebooks
 - [ProfileSVG](https://github.com/timholy/ProfileSVG.jl), a package for writing flame graphs to SVG format
+- [ProfileCanvas](https://github.com/pfitzseb/ProfileCanvas.jl), which exports the [profile viewer from the VSCode extension](https://www.julia-vscode.org/docs/stable/userguide/profiler/) to the REPL and Pluto 
 
 See the documentation for details.
 
