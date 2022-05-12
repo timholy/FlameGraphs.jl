@@ -11,10 +11,11 @@ You might use FlameGraphs on its own, but users should consider one of its downs
 
 - [ProfileView](https://github.com/timholy/ProfileView.jl), a graphical user interface (GUI) based on [Gtk](https://github.com/JuliaGraphics/Gtk.jl) for displaying and interacting with flame graphs
 - [PProf](https://github.com/JuliaPerf/PProf.jl), an interactive, web-based profile GUI explorer, implemented as a wrapper around [`google/pprof`](https://github.com/google/pprof). Has excellent support for interaction, filtering, aggregation, and viewing source code. But note that it loses the sample ordering information captured in FlameGraphs.
-- [Juno](https://junolab.org/), a development environment that supports profile visualization
+- [Julia for VSCode](https://www.julia-vscode.org/docs/stable/), an extension for [Visual Studio Code](https://code.visualstudio.com/) that supports [profile visualization](https://www.julia-vscode.org/docs/stable/userguide/profiler/)
 - [ProfileVega](https://github.com/davidanthoff/ProfileVega.jl), the recommended package for display in Jupyter notebooks
 - [ProfileSVG](https://github.com/timholy/ProfileSVG.jl), a package for writing flame graphs to SVG format
-- [ProfileCanvas](https://github.com/pfitzseb/ProfileCanvas.jl), which exports the [profile viewer from the VSCode extension](https://www.julia-vscode.org/docs/stable/userguide/profiler/) to the REPL and Pluto 
+- [ProfileCanvas](https://github.com/pfitzseb/ProfileCanvas.jl), which can replicate the VSCode profile viewer in Pluto 
+- [Juno](https://junolab.org/), a development environment that supports profile visualization (**no longer updated!**)
 
 See the documentation for details.
 
