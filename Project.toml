@@ -13,7 +13,7 @@ LeftChildRightSiblingTrees = "1d6d02ad-be62-4b6b-8a6d-2f90e265016e"
 Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [compat]
-AbstractTrees = "0.3"
+AbstractTrees = "0.3, 0.4"
 Colors = "0.9, 0.10, 0.11, 0.12"
 FileIO = "1.6"
 FixedPointNumbers = "0.6.1, 0.7, 0.8"
