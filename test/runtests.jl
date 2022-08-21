@@ -83,15 +83,15 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
             print_tree(io, g)
             str = String(take!(io))
             @test str == """
-FlameGraphs.NodeData(ip:0x0, 0x00, 1:4)
-├─ FlameGraphs.NodeData(f1 at file1:1, 0x00, 1:3)
-│  ├─ FlameGraphs.NodeData(f2 at file1:5, 0x00, 1:2)
-│  │  └─ FlameGraphs.NodeData(f3 at file2:1, 0x00, 1:2)
-│  │     └─ FlameGraphs.NodeData(f2 at file1:15, 0x00, 1:2)
-│  └─ FlameGraphs.NodeData(f4 at file1:20, 0x00, 3:3)
-│     └─ FlameGraphs.NodeData(f5 at file3:1, 0x00, 3:3)
-└─ FlameGraphs.NodeData(f1 at file1:2, 0x00, 4:4)
-   └─ FlameGraphs.NodeData(f6 at file3:10, 0x00, 4:4)
+NodeData(ip:0x0, 0x00, 1:4)
+├─ NodeData(f1 at file1:1, 0x00, 1:3)
+│  ├─ NodeData(f2 at file1:5, 0x00, 1:2)
+│  │  └─ NodeData(f3 at file2:1, 0x00, 1:2)
+│  │     └─ NodeData(f2 at file1:15, 0x00, 1:2)
+│  └─ NodeData(f4 at file1:20, 0x00, 3:3)
+│     └─ NodeData(f5 at file3:1, 0x00, 3:3)
+└─ NodeData(f1 at file1:2, 0x00, 4:4)
+   └─ NodeData(f6 at file3:10, 0x00, 4:4)
 """
         end
     end

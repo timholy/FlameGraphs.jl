@@ -6,7 +6,7 @@ FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 
 [compat]
-AbstractTrees = "0.3"
+AbstractTrees = "0.4"
 Colors = "0.11"
 Documenter = "0.24"
 FileIO = "1.2.2"
