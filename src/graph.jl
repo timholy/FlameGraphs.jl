@@ -31,26 +31,8 @@ const repl             = UInt8(4)
 const defaultpruned = Tuple{Symbol,Symbol}[]
 
 # This allows Revise to correct the location information in profiles
-if VERSION >= v"1.5.0-DEV.9"
-    # ref https://github.com/JuliaLang/julia/pull/34235
-    lineinfodict(data::Vector{<:Unsigned}) = Profile.getdict(data)
-else
-    # Use the definition of Profile.getdict from Julia 1.5.0-DEV.9+
-    function lineinfodict(data::Vector{<:Unsigned})
-        # Lookup is expensive, so do it only once per ip.
-        udata = unique(data)
-        dict = Profile.LineInfoDict()
-        for ip in udata
-            st = Profile.lookup(convert(Ptr{Cvoid}, ip))
-            # To correct line numbers for moving code, put it in the form expected by
-            # Base.update_stackframes_callback[]
-            stn = map(x->(x, 1), st)
-            try Base.invokelatest(Base.update_stackframes_callback[], stn) catch end
-            dict[UInt64(ip)] = map(first, stn)
-        end
-        return dict
-    end
-end
+# ref https://github.com/JuliaLang/julia/pull/34235
+lineinfodict(data::Vector{<:Unsigned}) = Profile.getdict(data)
 
 """
     lidict = lineinfodict(uips)
@@ -116,11 +98,7 @@ function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.
     else
         threads === nothing || error("Specifying `threads` is not supported before julia 1.8")
         tasks === nothing || error("Specifying `tasks` is not supported before julia 1.8")
-        if VERSION >= v"1.4.0-DEV.128"
-            root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
-        else
-            root = Profile.tree!(root, data_u64, lidict, #= C =# true)
-        end
+        root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
     end
     if isempty(root.down)
         Profile.warning_empty()
