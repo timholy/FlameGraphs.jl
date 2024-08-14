@@ -1,3 +1,5 @@
+const JLPROF_MAGIC = UInt8.(b"JLPROF\x01\x00")
+
 """
     save(f::FileIO.File)
     save(f::FileIO.File, data, lidict)
@@ -29,39 +31,47 @@ julia> @profile mapslices(sum, rand(3,3,3,3), dims=[1,2]);
 julia> save("/tmp/myprof.jlprof", Profile.retrieve()...)
 ```
 """
-function save(f::File{format"JLPROF"}, data::AbstractVector{<:Unsigned}, lidict::Profile.LineInfoDict)
+function save(filename::AbstractString, data::AbstractVector{<:Unsigned}, lidict::Profile.LineInfoDict)
+    open(filename, "w") do io
+        save(io, data, lidict)
+    end
+end
+
+function save(io::IO, data::AbstractVector{<:Unsigned}, lidict::Profile.LineInfoDict)
     data_u64 = convert(AbstractVector{UInt64}, data)
-    open(f, "w") do io
-        write(io, magic(format"JLPROF"))
-        # Write an endianness revealer
-        write(io, 0x01020304)
-        # Write an indicator that this is data/lidict format
-        write(io, 0x01)
-        write(io, Int64(length(data_u64)))
-        write(io, data_u64)
-        write(io, Int64(length(lidict)))
-        for (k, v) in lidict
-            write(io, k)
-            write(io, Int32(length(v)))
-            for sf in v
-                sfwrite(io, sf)
-            end
+    write(io, JLPROF_MAGIC)
+    # Write an endianness revealer
+    write(io, 0x01020304)
+    # Write an indicator that this is data/lidict format
+    write(io, 0x01)
+    write(io, Int64(length(data_u64)))
+    write(io, data_u64)
+    write(io, Int64(length(lidict)))
+    for (k, v) in lidict
+        write(io, k)
+        write(io, Int32(length(v)))
+        for sf in v
+            sfwrite(io, sf)
         end
     end
     return nothing
 end
 
-function save(f::File{format"JLPROF"}, g::Node{NodeData})
-    queue = Union{Nothing,typeof(g)}[]
-    open(f, "w") do io
-        write(io, magic(format"JLPROF"))
-        # Write an endianness revealer
-        write(io, 0x01020304)
-        # Write an indicator that this is node format
-        write(io, 0x02)
-        push!(queue, g)
-        savedfs!(io, queue)
+function save(filename::AbstractString, g::Node{NodeData})
+    open(filename, "w") do io
+        save(io, g)
     end
+end
+
+function save(io::IO, g::Node{NodeData})
+    queue = Union{Nothing,typeof(g)}[]
+    write(io, JLPROF_MAGIC)
+    # Write an endianness revealer
+    write(io, 0x01020304)
+    # Write an indicator that this is node format
+    write(io, 0x02)
+    push!(queue, g)
+    savedfs!(io, queue)
     return nothing
 end
 
@@ -86,8 +96,7 @@ function savedfs!(io, queue)
     return nothing
 end
 
-# Note: this doesn't work from FileIO because it returns an anonymous function for saving data
-save(f::File{format"JLPROF"}) = save(f, Profile.retrieve()...)
+save(filename::AbstractString) = save(filename, Profile.retrieve()...)
 
 """
     data, lidict = load(f::FileIO.File)
@@ -97,14 +106,17 @@ save(f::File{format"JLPROF"}) = save(f, Profile.retrieve()...)
 Load profiling data. You can reconstruct the flame graph from `flamegraph(data; lidict=lidict)`.
 Some files may already store the data in graph format, and return a single argument `g`.
 """
-function load(f::File{format"JLPROF"})
-    open(f) do io
-        skipmagic(io)
-        load(io)
-    end
+function load(filename::AbstractString)
+    open(load, filename)
 end
 
-function load(io::Stream{format"JLPROF"})
+
+function load(io::IO)
+    b0 = peek(io)
+    if b0 === JLPROF_MAGIC[1]
+        magic = read(io, length(JLPROF_MAGIC))
+        magic == JLPROF_MAGIC || error("invalid magic")
+    end
     endian = read(io, UInt32)
     endian == 0x01020304 || error("bswap not yet supported, please report as an issue to FlameGraphs.jl")
     fmt = read(io, UInt8)

@@ -4,7 +4,10 @@ using Profile, LeftChildRightSiblingTrees
 using Base.StackTraces: StackFrame
 using Profile: StackFrameTree
 using Colors, FixedPointNumbers, IndirectArrays
-using FileIO
+
+@static if !isdefined(Base, :get_extension)
+    using Requires
+end
 
 # AbstractTree interface for StackFrameTree:
 using AbstractTrees
@@ -17,6 +20,12 @@ include("graph.jl")
 include("render.jl")
 include("sfcategory.jl")
 include("io.jl")
+
+@static if !isdefined(Base, :get_extension)
+    function __init__()
+        @require FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549" include("../ext/FlameGraphsFileIOExt.jl")
+    end
+end
 
 function _precompile_()
     ccall(:jl_generating_output, Cint, ()) == 1 || return nothing

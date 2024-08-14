@@ -1,4 +1,4 @@
-using FlameGraphs, AbstractTrees, Colors, FileIO
+using FlameGraphs, AbstractTrees, Colors
 using Base.StackTraces: StackFrame
 using Test, Profile, InteractiveUtils
 
@@ -504,19 +504,70 @@ end
     A = randn(100, 100, 200)
     Profile.clear()
     @profile mapslices(sum, A; dims=2)
-    fn = tempname()*".jlprof"
-    f = File{format"JLPROF"}(fn)
-    FlameGraphs.save(f)
-    data, lidict = FlameGraphs.load(f)
     datar, lidictr = Profile.retrieve()
-    @test data == datar
-    @test lidictr == lidict
-    rm(fn)
-    fn = tempname()*".jlprof"
-    f = File{format"JLPROF"}(fn)
-    g = flamegraph(data; lidict=lidict)
-    FlameGraphs.save(f, g)
-    gr = FlameGraphs.load(f)
-    @test nodeeq(g, gr)
-    rm(fn)
+    gr = flamegraph(datar; lidict=lidictr)
+
+    @testset "w/o FileIO" begin
+        fn = tempname()*".jlprof"
+        FlameGraphs.save(fn)
+        data, lidict = FlameGraphs.load(fn)
+        @test data == datar
+        @test lidict == lidictr
+        rm(fn)
+        fn = tempname()*".jlprof"
+        FlameGraphs.save(fn, gr)
+        g = FlameGraphs.load(fn)
+        @test nodeeq(g, gr)
+        rm(fn)
+    end
+
+    @testset "w/ FileIO" begin
+        using FileIO
+        fmt = FileIO.DataFormat{:JLPROF}
+        fn = tempname()*".jlprof"
+        f = File{fmt}(fn)
+        save(f)
+        data, lidict = load(f)
+        @test data == datar
+        @test lidict == lidictr
+        rm(fn)
+        fn = tempname()*".jlprof"
+        f = File{fmt}(fn)
+        save(f, datar, lidictr)
+        data, lidict = load(f)
+        @test data == datar
+        @test lidict == lidictr
+        rm(fn)
+
+        fn = tempname()*".jlprof"
+        f = File{fmt}(fn)
+        save(f, gr)
+        g = load(f)
+        @test nodeeq(g, gr)
+        rm(fn)
+        fn = tempname()*".jlprof"
+        save(fn, gr)
+        g = load(fn)
+        @test nodeeq(g, gr)
+        rm(fn)
+
+        fn = tempname()*".non_standard_ext"
+        @test_throws Exception save(fn)
+    end
+
+    @testset "broken files" begin
+        io = IOBuffer(UInt8.(b"JLPROF\x00\x01"))
+        @test_throws Exception FlameGraphs.load(io)
+
+        fn = tempname()*".non_standard_ext"
+        write(fn, UInt8.(b"JLPROF\x00\x01"))
+        @test_throws Exception load(fn)
+        rm(fn)
+
+        io = IOBuffer(UInt8.(b"JLPROF\x01\x00\x01\x02\x03\x04"))
+        @test_throws Exception FlameGraphs.load(io)
+
+        io = IOBuffer(UInt8.(b"JLPROF\x01\x00\x04\x03\x02\x01\x03"))
+        @test_throws Exception FlameGraphs.load(io)
+    end
 end
