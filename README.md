@@ -1,7 +1,7 @@
 # FlameGraphs
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://timholy.github.io/FlameGraphs.jl/stable)
-[![Build Status](https://travis-ci.com/timholy/FlameGraphs.jl.svg?branch=master)](https://travis-ci.com/timholy/FlameGraphs.jl)
+[![Build Status](https://github.com/timholy/FlameGraphs.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/timholy/FlameGraphs.jl/actions/workflows/ci.yml)
 [![PkgEval][pkgeval-img]][pkgeval-url]
 [![Codecov](https://codecov.io/gh/timholy/FlameGraphs.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/timholy/FlameGraphs.jl)
 
