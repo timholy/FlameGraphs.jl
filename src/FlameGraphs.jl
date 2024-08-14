@@ -32,6 +32,6 @@ function _precompile_()
         precompile(f, (Nothing, typeof(flamepixels), FlameColors, Node{NodeData}))
     end
 end
-VERSION >= v"1.4.2" && _precompile_() # https://github.com/JuliaLang/julia/pull/35378
+_precompile_()
 
 end # module
