@@ -436,7 +436,9 @@ end
     A = randn(100, 100, 200)
     Profile.clear()
     mapslices(sum, A; dims=2)  # compile it so we don't end up profiling inference
-    @profile mapslices(sum, A; dims=2)
+    while Profile.len_data() == 0
+        @profile mapslices(sum, A; dims=2)
+    end
     g = flamegraph()
     @test FlameGraphs.depth(g) > 10
     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
@@ -461,8 +463,10 @@ end
     end
     Ts = subtypes(Any)[1:20]   # we don't need all of them
     mappushes!(spell_spec, [], Ts)
-    @profile for i = 1:10000
-        mappushes!(spell_spec, [], Ts)
+    while Profile.len_data() == 0
+        @profile for i = 1:1000
+            mappushes!(spell_spec, [], Ts)
+        end
     end
     _, sfdict = Profile.retrieve()
     rtds = []
@@ -503,7 +507,9 @@ end
 
     A = randn(100, 100, 200)
     Profile.clear()
-    @profile mapslices(sum, A; dims=2)
+    while Profile.len_data() == 0
+        @profile mapslices(sum, A; dims=2)
+    end
     fn = tempname()*".jlprof"
     f = File{format"JLPROF"}(fn)
     FlameGraphs.save(f)
