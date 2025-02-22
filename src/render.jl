@@ -171,7 +171,9 @@ function flametags(g, img)
     tags = fill(1, axes(img))
     ndata = g.data
     sflist = StackFrame[StackTraces.UNKNOWN]
-    sf2tag = Dict{StackFrame,Int}(StackTraces.UNKNOWN=>1)
+    # use an IdDict so that equal stackframes from different places in the flamegraph can be
+    # distinguishable via egality
+    sf2tag = IdDict{StackFrame,Int}(StackTraces.UNKNOWN=>1)
     tags[:,1] .= tagidx(ndata.sf, sf2tag, sflist)
     costscale = size(img, 1) / length(ndata.span)
     flametags!(tags, g, sf2tag, sflist, 2, costscale)
