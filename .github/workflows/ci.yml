@@ -44,7 +44,7 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
         with:
-          cache-registries: ${{ ! (matrix.version == '1.6' && runner.os == 'windows-latest') }}
+          cache-registries: ${{ ! (matrix.version == '1.6' && matrix.os == 'windows-latest') }}
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
       - uses: julia-actions/julia-processcoverage@latest
