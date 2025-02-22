@@ -464,7 +464,7 @@ end
     Ts = subtypes(Any)[1:20]   # we don't need all of them
     mappushes!(spell_spec, [], Ts)
     while Profile.len_data() == 0
-        @profile for i = 1:1000
+        @profile for i = 1:10000
             mappushes!(spell_spec, [], Ts)
         end
     end
