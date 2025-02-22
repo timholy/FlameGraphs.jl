@@ -440,7 +440,7 @@ end
     for _ in 1:10
         @profile mapslices(sum, A; dims=2)
         g = flamegraph()
-        (isnothing(g) || FlameGraphs.depth(g) > 10) && break
+        (g !== nothing && FlameGraphs.depth(g) > 10) && break
     end
     @test FlameGraphs.depth(g) > 10
     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
