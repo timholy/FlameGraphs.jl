@@ -436,10 +436,12 @@ end
     A = randn(100, 100, 200)
     Profile.clear()
     mapslices(sum, A; dims=2)  # compile it so we don't end up profiling inference
-    while Profile.len_data() == 0
+    g = nothing
+    for _ in 1:10
         @profile mapslices(sum, A; dims=2)
+        g = flamegraph()
+        FlameGraphs.depth(g) > 10 && break
     end
-    g = flamegraph()
     @test FlameGraphs.depth(g) > 10
     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
     @test any(img .== colorant"orange")
