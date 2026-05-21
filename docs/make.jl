@@ -1,18 +1,18 @@
-using Documenter, FlameGraphs, FileIO
+using Documenter, FlameGraphs
 
 makedocs(;
     modules=[FlameGraphs],
-    format=Documenter.HTML(
-        prettyurls = get(ENV, "CI", nothing) == "true",
+    format=Documenter.HTML(;
         assets = ["assets/favicon.ico"],
+        canonical = "https://timholy.github.io/FlameGraphs.jl/stable/",
     ),
     pages=[
         "Home" => "index.md",
-        "reference.md"
+        "Reference" => "reference.md",
     ],
-    repo="https://github.com/timholy/FlameGraphs.jl/blob/{commit}{path}#L{line}",
     sitename="FlameGraphs.jl",
     authors="Tim Holy <tim.holy@gmail.com>",
+    checkdocs=:exported,
 )
 
 deploydocs(;
