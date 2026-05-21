@@ -530,8 +530,10 @@ end
     rm(fn)
 end
 
-# Issues #52 and #70
-if isdefined(Profile, :Allocs)
+# Issues #52 and #70.
+# `@static` is required: `Profile.Allocs.@profile` is a macro and would be
+# resolved at expansion time even inside a runtime `if`, erroring before Julia 1.8.
+@static if isdefined(Profile, :Allocs)
     @testset "allocation profiler" begin
         # Each child's span must immediately follow its previous sibling, starting
         # at the parent's span; children may sum to less than the parent (self-weight).
@@ -578,6 +580,14 @@ if isdefined(Profile, :Allocs)
         @test spansvalid(gC)
 
         @test_throws "`mode` must be `:bytes` or `:count`" flamegraph(results; mode=:nope)
+
+        # Pathologically long type names are truncated so leaf labels stay readable.
+        bigtype = NamedTuple{ntuple(i -> Symbol(:field, i), 40), NTuple{40,Float64}}
+        @test length(string(bigtype)) > 200
+        short = FlameGraphs.alloctypename(bigtype)
+        @test length(short) <= 120
+        @test occursin('…', short)
+        @test FlameGraphs.alloctypename(Vector{Float64}) == "Vector{Float64}"
 
         empty = Profile.Allocs.AllocResults(Profile.Allocs.Alloc[])
         @test (@test_logs (:warn, r"There were no samples collected") flamegraph(empty)) === nothing

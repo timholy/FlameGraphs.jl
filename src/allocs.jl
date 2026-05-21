@@ -21,8 +21,21 @@ framekey(sf::StackFrame) = (sf.func, sf.file, sf.line, sf.from_c)
 
 # The leaf of each allocation branch names the type of the allocated object.
 # `Profile.Allocs` reports unknown types as `Profile.Allocs.UnknownType`; strip
-# the module qualifier so the leaf reads simply as `UnknownType`.
-alloctypename(@nospecialize(T)) = replace(string(T), "Profile.Allocs." => "")
+# the module qualifier so the leaf reads simply as `UnknownType`. Type names can
+# occasionally be enormous (deeply parametric types, large `NamedTuple`s); keep
+# the label bounded, retaining head and tail, so it stays readable in
+# `print_tree` and other renderers.
+const alloctypename_maxlen = 120
+
+function alloctypename(@nospecialize(T))
+    name = replace(string(T), "Profile.Allocs." => "")
+    if length(name) > alloctypename_maxlen
+        head = alloctypename_maxlen ÷ 2 - 1
+        tail = alloctypename_maxlen - head - 1
+        name = string(first(name, head), '…', last(name, tail))
+    end
+    return name
+end
 
 """
     g = flamegraph(allocs::Profile.Allocs.AllocResults; C=false, mode=:bytes, pruned=[], norepl=true, filter=nothing)
