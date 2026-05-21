@@ -42,8 +42,6 @@ This is a `Dict(UInt64=>Vector{StackFrame})`, where the `UInt64` is the instruct
 The reason a single instruction pointer gives a `Vector{StackFrame}` is because
 of inlining; the first entry corresponds to the instruction that actually ran,
 and the later entries correspond to the call chain.
-
-See also [`unique_ips`](@ref).
 """
 lineinfodict(s::Set) = lineinfodict(collect(s))
 
@@ -73,8 +71,8 @@ You can control the strategy with the following keywords:
 - `threads::Union{Int,AbstractVector{Int},Nothing}`: specify which threads to include samples from. `nothing` returns all.
 - `tasks::Union{Int,AbstractVector{Int},Nothing}`: specify which tasks to include samples from. `nothing` returns all.
 
-!!! compat 1.8
-    The `threads` and `tasks` kwargs require julia 1.8
+!!! compat "Julia 1.8"
+    The `threads` and `tasks` kwargs require Julia 1.8
 
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.

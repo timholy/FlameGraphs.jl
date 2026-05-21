@@ -8,46 +8,36 @@ FlameGraphs is used by IDEs like [Juno](https://github.com/JunoLab/Juno.jl) and 
 
 The core function of FlameGraphs is to compute a tree representation of a set of backtraces collected by Julia's [sampling profiler](https://docs.julialang.org/en/latest/manual/profile/). For a demonstration we'll use the following function:
 
-```jldoctest profile_test; filter=[r", [0-9]+:[0-9]+\)", r"0x0[123]"]
-julia> function profile_test(n)
-           for i = 1:n
-               A = randn(100,100,20)
-               m = maximum(A)
-               Am = mapslices(sum, A; dims=2)
-               B = A[:,:,5]
-               Bsort = mapslices(sort, B; dims=1)
-               b = rand(100)
-               C = B.*b
-           end
-       end
-profile_test (generic function with 1 method)
+```@repl profile_test
+function profile_test(n)
+    for i = 1:n
+        A = randn(100,100,20)
+        m = maximum(A)
+        Am = mapslices(sum, A; dims=2)
+        B = A[:,:,5]
+        Bsort = mapslices(sort, B; dims=1)
+        b = rand(100)
+        C = B.*b
+    end
+end
 
-julia> profile_test(1)              # run once to compile
+profile_test(1)              # run once to compile
 
-julia> using Profile, FlameGraphs
+using Profile, FlameGraphs
 
-julia> Profile.clear(); @profile profile_test(10)    # collect profiling data
+Profile.clear(); @profile profile_test(10)    # collect profiling data
 
-julia> g = flamegraph()
-Node(FlameGraphs.NodeData(ip:0x0, 0x01, 1:62))
+g = flamegraph()
 ```
 
-This may not be very informative on its own; the only thing this communicates clearly is that 62 samples (separate backtraces) were collected during profiling.
+This may not be very informative on its own; the only thing it communicates clearly is the number of samples (separate backtraces) collected during profiling, given by the range in the printed `NodeData`.
 (If you run this example yourself, you might get a different number of samples depending on how fast your machine is and which operating system you use.)
 It becomes more meaningful with
 
-```jldoctest profile_test; filter=[r"^\s*[├└│⋮].*$", r", [0-9]+:[0-9]+\)", r"0x0[123]"]
-julia> using AbstractTrees
+```@repl profile_test
+using AbstractTrees
 
-julia> print_tree(g)
-FlameGraphs.NodeData(ip:0x0, 0x01, 1:62)
-├─ FlameGraphs.NodeData(randn(::Random.MersenneTwister, ::Type{Float64}) at normal.jl:167, 0x00, 62:62)
-└─ FlameGraphs.NodeData(eval(::Module, ::Any) at boot.jl:330, 0x01, 1:61)
-   ├─ FlameGraphs.NodeData(profile_test(::Int64) at REPL[2]:3, 0x00, 1:15)
-   │  └─ FlameGraphs.NodeData(randn at normal.jl:190 [inlined], 0x00, 1:15)
-   │     └─ FlameGraphs.NodeData(randn(::Random.MersenneTwister, ::Type{Float64}, ::Int64, ::Int64, ::Vararg{Int64,N} where N) at normal.jl:184, 0x01, 1:15)
-   │        └─ FlameGraphs.NodeData(randn!(::Random.MersenneTwister, ::Array{Float64,3}) at normal.jl:173, 0x00, 2:15)
-[...]
+print_tree(g)
 ```
 
 Each node of the tree consists of a `StackFrame` indicating the file, function, and line number of a particular entry in one or more backtraces, a status flag, and a range that corresponds to the horizontal span of a particular node when the graph is rendered.  See [`FlameGraphs.NodeData`](@ref) for more information.
@@ -98,9 +88,23 @@ using Plots, Profile, FlameGraphs
 g = flamegraph(C=true)
 ```
 ```@setup ttfp
-using FileIO, FlameGraphs, Colors
-data, lidict = load(joinpath("assets", "profile_ttfp.jlprof"))
-g = flamegraph(data; lidict=lidict)
+using FileIO, FlameGraphs, Colors, Profile
+
+function profile_test(n)
+    for i = 1:n
+        A = randn(100,100,20)
+        m = maximum(A)
+        Am = mapslices(sum, A; dims=2)
+        B = A[:,:,5]
+        Bsort = mapslices(sort, B; dims=1)
+        b = rand(100)
+        C = B.*b
+    end
+end
+profile_test(1)
+Profile.clear()
+@profile profile_test(10)
+g = flamegraph(C=true)
 save_image(name, img) = save(joinpath("assets", name), reverse(img'; dims=1))
 ```
 ```@repl ttfp
