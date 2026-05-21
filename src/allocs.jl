@@ -10,10 +10,10 @@
 const AllocKey = Tuple{Symbol,Symbol,Int,Bool}
 
 mutable struct AllocTreeNode
-    sf::StackFrame
+    const sf::StackFrame
     status::UInt8
     weight::Int
-    children::Dict{AllocKey,AllocTreeNode}
+    const children::Dict{AllocKey,AllocTreeNode}
 end
 AllocTreeNode(sf::StackFrame) = AllocTreeNode(sf, UInt8(0), 0, Dict{AllocKey,AllocTreeNode}())
 
