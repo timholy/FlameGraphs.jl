@@ -25,13 +25,8 @@ stackframe(func, file, line; C=false) = StackFrame(Symbol(func), Symbol(file), l
                                      7=>stackframe(:f1, :file1, 2),
                                      8=>stackframe(:f6, :file3, 10))
     for threads in [nothing, dummy_thread], tasks in [nothing, dummy_task]
-        VERSION < v"1.8.0-DEV.460" && threads !== nothing && tasks !== nothing && continue # skip if threads not available
         @testset "Threads: $(repr(threads)), Tasks: $(repr(tasks))" begin
-            g = if VERSION >= v"1.8.0-DEV.460"
-                flamegraph(backtraces; lidict=lidict, threads=threads, tasks=tasks)
-            else
-                flamegraph(backtraces; lidict=lidict)
-            end
+            g = flamegraph(backtraces; lidict=lidict, threads=threads, tasks=tasks)
             @test all(node->node.data.status == 0, PostOrderDFS(g))
             level1 = collect(g)
             @test length(level1) == 2
