@@ -529,3 +529,57 @@ end
     @test nodeeq(g, gr)
     rm(fn)
 end
+
+# Issues #52 and #70
+if isdefined(Profile, :Allocs)
+    @testset "allocation profiler" begin
+        # Each child's span must immediately follow its previous sibling, starting
+        # at the parent's span; children may sum to less than the parent (self-weight).
+        function spansvalid(node)
+            kids = collect(node)
+            isempty(kids) && return true
+            s = first(node.data.span)
+            for k in kids
+                first(k.data.span) == s || return false
+                spansvalid(k) || return false
+                s = last(k.data.span) + 1
+            end
+            return last(kids).data.span[end] <= last(node.data.span)
+        end
+
+        alloc_workload() = [Vector{Float64}(undef, 4) for _ in 1:2000]
+
+        alloc_workload()  # compile
+        Profile.Allocs.clear()
+        Profile.Allocs.@profile sample_rate=1.0 alloc_workload()
+        results = Profile.Allocs.fetch()
+
+        g = flamegraph(results)
+        @test g !== nothing
+        @test first(g.data.span) == 1
+        @test length(g.data.span) == sum(a.size for a in results.allocs)
+        @test spansvalid(g)
+
+        # The leaf of every branch names the allocated type, with no location info.
+        leaves = [n for n in PostOrderDFS(g) if isempty(collect(n))]
+        @test !isempty(leaves)
+        @test all(l -> l.data.sf.file === Symbol("") && l.data.sf.line == 0, leaves)
+        @test any(l -> l.data.sf.func === Symbol("Vector{Float64}"), leaves)
+        @test any(n -> n.data.sf.func === :alloc_workload, PreOrderDFS(g))
+
+        # `mode=:count` weights each node by the number of allocations.
+        gc = flamegraph(results; mode=:count)
+        @test length(gc.data.span) == length(results.allocs)
+        @test spansvalid(gc)
+
+        # Suppressed C frames still account for all the allocated bytes.
+        gC = flamegraph(results; C=true)
+        @test length(gC.data.span) == length(g.data.span)
+        @test spansvalid(gC)
+
+        @test_throws "`mode` must be `:bytes` or `:count`" flamegraph(results; mode=:nope)
+
+        empty = Profile.Allocs.AllocResults(Profile.Allocs.Alloc[])
+        @test (@test_logs (:warn, r"There were no samples collected") flamegraph(empty)) === nothing
+    end
+end

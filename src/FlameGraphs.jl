@@ -14,6 +14,7 @@ AbstractTrees.printnode(io::IO, node::StackFrameTree) = print(io, node.frame)
 export flamegraph, flamepixels, flametags, FlameColors, StackFrameCategory
 
 include("graph.jl")
+include("allocs.jl")
 include("render.jl")
 include("sfcategory.jl")
 include("io.jl")
