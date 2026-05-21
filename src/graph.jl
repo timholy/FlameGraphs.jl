@@ -55,8 +55,7 @@ profiling data, supply both. (`data` and `lidict` must be a matched pair from `P
 You can control the strategy with the following keywords:
 
 - `C`: if `true`, include stackframes collected from `ccall`ed code.
-- `recur` (supported on Julia 1.4+): represent recursive calls as if they corresponded to
-  iteration.
+- `recur`: represent recursive calls as if they corresponded to iteration.
 - `norepl`: if true, the portions of stacktraces deeper than `REPL.eval_user_input` are discarded.
 - `pruned`: a list of `(funcname, filename)` pairs that trigger the termination of this branch
   of the flame graph. You can use this to prevent very "tall" graphs from deeply-recursive
@@ -70,9 +69,6 @@ You can control the strategy with the following keywords:
   or ancestor.
 - `threads::Union{Int,AbstractVector{Int},Nothing}`: specify which threads to include samples from. `nothing` returns all.
 - `tasks::Union{Int,AbstractVector{Int},Nothing}`: specify which tasks to include samples from. `nothing` returns all.
-
-!!! compat "Julia 1.8"
-    The `threads` and `tasks` kwargs require Julia 1.8
 
 `g` can be inspected using [`AbstractTrees.jl`'s](https://github.com/JuliaCollections/AbstractTrees.jl)
 `print_tree`.
@@ -89,15 +85,9 @@ function flamegraph(data=Profile.fetch(); lidict::Union{Dict{UInt64,Vector{Base.
     # Build the tree with C=true, regardless of user setting. This is because
     # we need the C frames to set the status flag. They will be omitted by `flamegraph!`
     # as needed.
-    if VERSION >= v"1.8.0-DEV.460"
-        threads = something(threads, 1:Threads.nthreads())
-        tasks = something(tasks, typemin(UInt):typemax(UInt))
-        root, _ = Profile.tree!(root, data_u64, lidict, #= C =# true, recur, threads, tasks)
-    else
-        threads === nothing || error("Specifying `threads` is not supported before julia 1.8")
-        tasks === nothing || error("Specifying `tasks` is not supported before julia 1.8")
-        root = Profile.tree!(root, data_u64, lidict, #= C =# true, recur)
-    end
+    threads = something(threads, 1:Threads.nthreads())
+    tasks = something(tasks, typemin(UInt):typemax(UInt))
+    root, _ = Profile.tree!(root, data_u64, lidict, #= C =# true, recur, threads, tasks)
     if isempty(root.down)
         Profile.warning_empty()
         return nothing

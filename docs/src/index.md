@@ -46,6 +46,20 @@ Each node of the tree consists of a `StackFrame` indicating the file, function, 
 
 [`flamegraph`](@ref) has several options that can be used to control how it computes the graph.
 
+## Allocation profiles
+
+FlameGraphs can also represent data collected by Julia's [allocation profiler](https://docs.julialang.org/en/v1/stdlib/Profile/#Profile.Allocs.@profile) (`Profile.Allocs`). Collect the data and pass the result of `Profile.Allocs.fetch()` to `flamegraph`:
+
+```julia
+using Profile, FlameGraphs
+
+Profile.Allocs.@profile profile_test(10)
+
+g = flamegraph(Profile.Allocs.fetch())
+```
+
+For an allocation flame graph, the width of each node measures memory allocation rather than run time: by default the number of bytes allocated, or the number of separate allocations with `mode=:count`. The leaf of each branch names the type of the allocated object. The resulting `g` is an ordinary flame graph and can be rendered exactly like a time profile.
+
 ## Rendering a flame graph
 
 You can create a "bitmap" representation of the flame graph with [`flamepixels`](@ref):
