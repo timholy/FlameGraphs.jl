@@ -2,8 +2,10 @@
 # Implements issues #52 and #70. The allocation profiler hands back already-decoded
 # stack traces (rather than instruction pointers), so the tree is built directly
 # instead of going through `Profile.tree!`.
-
-@static if isdefined(Profile, :Allocs)
+#
+# This file is only `include`d on Julia 1.8+ (see FlameGraphs.jl); it must not be
+# parsed on earlier versions, where `Profile.Allocs` is absent and `const` struct
+# fields are a syntax error.
 
 # An intermediate tree used while accumulating allocation weights. Identical
 # stackframes are merged, keyed by `framekey`.
@@ -125,5 +127,3 @@ function flamegraph_allocs!(graph, atn::AllocTreeNode)
     end
     return graph
 end
-
-end  # @static if isdefined(Profile, :Allocs)

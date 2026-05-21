@@ -14,7 +14,11 @@ AbstractTrees.printnode(io::IO, node::StackFrameTree) = print(io, node.frame)
 export flamegraph, flamepixels, flametags, FlameColors, StackFrameCategory
 
 include("graph.jl")
-include("allocs.jl")
+# `allocs.jl` uses syntax (`const` struct fields) and types (`Profile.Allocs`)
+# unavailable before Julia 1.8, so it must not even be parsed there.
+@static if isdefined(Profile, :Allocs)
+    include("allocs.jl")
+end
 include("render.jl")
 include("sfcategory.jl")
 include("io.jl")
