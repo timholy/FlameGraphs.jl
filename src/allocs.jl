@@ -2,10 +2,6 @@
 # Implements issues #52 and #70. The allocation profiler hands back already-decoded
 # stack traces (rather than instruction pointers), so the tree is built directly
 # instead of going through `Profile.tree!`.
-#
-# This file is only `include`d on Julia 1.8+ (see FlameGraphs.jl); it must not be
-# parsed on earlier versions, where `Profile.Allocs` is absent and `const` struct
-# fields are a syntax error.
 
 # An intermediate tree used while accumulating allocation weights. Identical
 # stackframes are merged, keyed by `framekey`.
@@ -58,9 +54,6 @@ allocated object.
 
 The keywords `C`, `pruned`, `norepl`, and `filter` behave as in the
 time-profiling [`flamegraph`](@ref) method.
-
-!!! compat "Julia 1.8"
-    The allocation profiler requires Julia 1.8 or later.
 """
 function flamegraph(allocs::Profile.Allocs.AllocResults; C::Bool=false, mode::Symbol=:bytes,
         pruned=defaultpruned, norepl::Bool=true, filter=nothing)

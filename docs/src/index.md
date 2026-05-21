@@ -48,7 +48,7 @@ Each node of the tree consists of a `StackFrame` indicating the file, function, 
 
 ## Allocation profiles
 
-FlameGraphs can also represent data collected by Julia's [allocation profiler](https://docs.julialang.org/en/v1/stdlib/Profile/#Profile.Allocs.@profile) (`Profile.Allocs`, available on Julia 1.8 and later). Collect the data and pass the result of `Profile.Allocs.fetch()` to `flamegraph`:
+FlameGraphs can also represent data collected by Julia's [allocation profiler](https://docs.julialang.org/en/v1/stdlib/Profile/#Profile.Allocs.@profile) (`Profile.Allocs`). Collect the data and pass the result of `Profile.Allocs.fetch()` to `flamegraph`:
 
 ```julia
 using Profile, FlameGraphs
