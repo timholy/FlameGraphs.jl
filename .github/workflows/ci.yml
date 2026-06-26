@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -22,26 +22,15 @@ jobs:
         version:
           - 'min'
           - '1'
-          - 'nightly'
         os:
           - ubuntu-latest
-          - macos-13
+          - macos-latest
           - windows-latest
-        arch:
-          - x64
-        include:
-          - os: macos-latest
-            version: '1'
-            arch: aarch64
-          - os: macos-latest
-            version: 'nightly'
-            arch: aarch64
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest

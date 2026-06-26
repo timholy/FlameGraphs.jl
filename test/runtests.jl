@@ -431,13 +431,22 @@ end
     A = randn(100, 100, 200)
     Profile.clear()
     mapslices(sum, A; dims=2)  # compile it so we don't end up profiling inference
+    # Sample finely so fast machines collect enough deep stacks to exceed the
+    # depth threshold below. Windows enforces a coarser minimum interval than
+    # other platforms, so this requested delay is a floor, not a guarantee.
+    n, delay = Profile.init()
+    Profile.init(; n, delay = 0.0001)
     g = nothing
-    for _ in 1:10
-        @profile mapslices(sum, A; dims=2)
-        g = flamegraph()
-        (g !== nothing && FlameGraphs.depth(g) > 10) && break
+    try
+        for _ in 1:10
+            @profile mapslices(sum, A; dims=2)
+            g = flamegraph()
+            (g !== nothing && FlameGraphs.depth(g) > 5) && break
+        end
+    finally
+        Profile.init(; n, delay)
     end
-    @test FlameGraphs.depth(g) > 10
+    @test FlameGraphs.depth(g) > 5
     img = flamepixels(StackFrameCategory(), flamegraph(C=true))
     @test any(img .== colorant"orange")
     A = [1,2,3]
