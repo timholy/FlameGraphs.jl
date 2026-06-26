@@ -434,26 +434,28 @@ end
     # Sample finely so fast machines collect enough deep stacks to exceed the
     # depth threshold below. Windows enforces a coarser minimum interval than
     # other platforms, so this requested delay is a floor, not a guarantee.
+    # `Profile.init` clears the sample buffer, so restore the delay only after
+    # the last read of the buffer below.
     n, delay = Profile.init()
     Profile.init(; n, delay = 0.0001)
-    g = nothing
     try
+        g = nothing
         for _ in 1:10
             @profile mapslices(sum, A; dims=2)
             g = flamegraph()
             (g !== nothing && FlameGraphs.depth(g) > 5) && break
         end
+        @test FlameGraphs.depth(g) > 5
+        img = flamepixels(StackFrameCategory(), flamegraph(C=true))
+        @test any(img .== colorant"orange")
+        A = [1,2,3]
+        sum(A)
+        Profile.clear()
+        @profile sum(A)
+        Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
     finally
         Profile.init(; n, delay)
     end
-    @test FlameGraphs.depth(g) > 5
-    img = flamepixels(StackFrameCategory(), flamegraph(C=true))
-    @test any(img .== colorant"orange")
-    A = [1,2,3]
-    sum(A)
-    Profile.clear()
-    @profile sum(A)
-    Sys.islinux() && @test_logs (:warn, r"There were no samples collected.") flamegraph() === nothing
 end
 
 @testset "Runtime dipatch detection" begin
