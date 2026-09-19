@@ -4,7 +4,6 @@ using Profile, LeftChildRightSiblingTrees
 using Base.StackTraces: StackFrame
 using Profile: StackFrameTree
 using Colors, FixedPointNumbers, IndirectArrays
-using FileIO
 
 # AbstractTree interface for StackFrameTree:
 using AbstractTrees
